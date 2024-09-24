@@ -15,7 +15,7 @@
 3. **/lootsplit party upload**
     - Uploads the loot split for the party.
 
-4. **/lootsplit guild upload**
+4. **/lootsplit guild upload <name> <file>**
     - Uploads the loot split for the guild. If no upload, uses the default setup from `/guild upload`.
 
 5. **/lootsplit add player**
@@ -52,9 +52,11 @@
     - Cross-check the username with the uploaded guild list to verify they exist.
     - Ensure the username hasn’t already been registered.
     - Output respective messages for success or failure (e.g., already registered, username not found in guild list).
-2. **/guild upload (guild list)**
+2. **/guild upload <name> <file>**
     - Uploads the guild list, which can be used for cross-referencing. Stored ONCE per server
-3. **/guestsetup role time**
+3. **/guild remove <name>**
+    - Removes the guild list
+4. **/guestsetup role time**
     - Sets a role as the "guest" role that grants that role for that time
     - Listens for role change, after user receives that guest role,t hey will hold it for Time time.
 
