@@ -15,19 +15,19 @@
 3. **/lootsplit party upload**
     - Uploads the loot split for the party.
 
-4. **/lootsplit guild upload <name> <file>**
+4. **/lootsplit guild upload (name) (file)**
     - Uploads the loot split for the guild. If no upload, uses the default setup from `/guild upload`.
 
-5. **/lootsplit add player**
+5. **/lootsplit add (player)**
     - Adds a player to the current lootsplit session.
 
-6. **/lootsplit remove player**
+6. **/lootsplit remove (player)**
     - Removes a player from the current lootsplit session.
 
 7. **/lootsplit set value (silver) (items)**
     - Sets the value for silver and items to be split.
 
-8. **/lootsplit half player**
+8. **/lootsplit half (player_name)**
     - Player only gets half of the amount added to their balance.
 
 9. **/lootsplit confirm split-ID**
@@ -52,9 +52,9 @@
     - Cross-check the username with the uploaded guild list to verify they exist.
     - Ensure the username hasn’t already been registered.
     - Output respective messages for success or failure (e.g., already registered, username not found in guild list).
-2. **/guild upload <name> <file>**
+2. **/guild upload (name) (file)**
     - Uploads the guild list, which can be used for cross-referencing. Stored ONCE per server
-3. **/guild remove <name>**
+3. **/guild remove (name)**
     - Removes the guild list
 4. **/guestsetup role time**
     - Sets a role as the "guest" role that grants that role for that time
