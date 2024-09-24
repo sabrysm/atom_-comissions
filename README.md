@@ -12,7 +12,7 @@
 2. **/lootsplit create (name)**
     - Creates a new lootsplit session with the specified name.
 
-3. **/lootsplit party upload**
+3. **/lootsplit party upload (img)**
     - Uploads the loot split for the party.
 
 4. **/lootsplit guild upload (name) (file)**
@@ -30,15 +30,15 @@
 8. **/lootsplit half (player_name)**
     - Player only gets half of the amount added to their balance.
 
-9. **/lootsplit confirm split-ID**
+9. **/lootsplit confirm (split-ID)**
     - Confirms the lootsplit with the specified ID and adds balances after performing calculations based on:
         - Amount added: `silver amount * 0.9 + item value * 0.75`.
         - This calculation should be editable in the code (commented as such).
 
-10. **/remove user amount**
+10. **/remove user amount (amount)**
     - Removes a specified amount from a user’s balance.
 
-11. **/give user amount**
+11. **/give user amount (amount)**
     - Adds a specified amount to a user’s balance.
 
 12. **/leaderboard**
