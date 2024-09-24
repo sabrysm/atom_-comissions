@@ -56,7 +56,7 @@
     - Uploads the guild list, which can be used for cross-referencing. Stored ONCE per server
 3. **/guild remove (name)**
     - Removes the guild list
-4. **/guestsetup role time**
+4. **/guestsetup (role) (time_in_min)**
     - Sets a role as the "guest" role that grants that role for that time
     - Listens for role change, after user receives that guest role,t hey will hold it for Time time.
 
