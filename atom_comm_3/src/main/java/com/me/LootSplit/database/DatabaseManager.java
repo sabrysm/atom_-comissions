@@ -95,7 +95,7 @@ public class DatabaseManager {
         return balance;
     }
 
-    // createNewLootSplitSession(String splitId, String name)
+    // createNewLootSplitSession(String splitId, String name, long guildId)
     public void createNewLootSplitSession(String splitId, String name, long guildId) {
         Connection connection = null;
         try {
@@ -113,7 +113,7 @@ public class DatabaseManager {
         }
     }
 
-    // addPlayerToLootSplit(String splitId, String playerName)
+    // addPlayerToLootSplit(String splitId, String playerName, long guildId)
     public void addPlayerToLootSplit(String splitId, String playerName, long guildId) {
         Connection connection = null;
         try {
@@ -131,7 +131,7 @@ public class DatabaseManager {
         }
     }
 
-    // addPlayersToLootSplit(String splitId, List<String> playerNames) using addBatch() and executeBatch()
+    // addPlayersToLootSplit(String splitId, List<String> playerNames, long guildId) using addBatch() and executeBatch()
     public void addPlayersToLootSplit(String splitId, List<String> playerNames, long guildId) {
         Connection connection = null;
         try {
@@ -318,7 +318,7 @@ public class DatabaseManager {
         }
     }
 
-    // uploadGuildList(String guildName, List<String> names)
+    // uploadGuildList(String guildName, List<String> names, long guildId)
     public void uploadGuildList(String guildName, List<String> names, long guildId) {
         Connection connection = null;
         try {
@@ -342,7 +342,7 @@ public class DatabaseManager {
         }
     }
 
-    // removeGuildList(String guildName)
+    // removeGuildList(String guildName, long guildId)
     public void removeGuildList(String guildName, long guildId) {
         Connection connection = null;
         try {
@@ -362,7 +362,7 @@ public class DatabaseManager {
         }
     }
 
-    // addNewRole(String roleName, Integer durationInMin)
+    // addNewRole(String roleName, Integer durationInMin, long guildId)
     public void addNewRole(String roleName, Integer durationInMin, long guildId) {
         Connection connection = null;
         try {
@@ -383,13 +383,14 @@ public class DatabaseManager {
         }
     }
 
-    // removePlayerRole(String playerName)
-    public void removePlayerRole(String playerName) {
+    // removePlayerRole(String playerName, long guildId)
+    public void removePlayerRole(String playerName, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players_roles WHERE username = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players_roles WHERE username = ? AND guild_id = ?")) {
                 statement.setString(1, playerName);
+                statement.setLong(2, guildId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
