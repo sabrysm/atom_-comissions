@@ -74,7 +74,7 @@ public class DatabaseManager {
     }
 
     // getPlayerBalance(String playerName)
-    public int getPlayerBalance(String playerName) {
+    public int getPlayerBalance(String playerName) throws SQLException {
         Connection connection = null;
         int balance = 0;
         try {
@@ -96,7 +96,7 @@ public class DatabaseManager {
     }
 
     // createNewLootSplitSession(String splitId, String name, long guildId)
-    public void createNewLootSplitSession(String splitId, String name, long guildId) {
+    public void createNewLootSplitSession(String splitId, String name, long guildId) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -114,7 +114,7 @@ public class DatabaseManager {
     }
 
     // addPlayerToLootSplit(String splitId, String playerName, long guildId)
-    public void addPlayerToLootSplit(String splitId, String playerName, long guildId) {
+    public void addPlayerToLootSplit(String splitId, String playerName, long guildId) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -132,7 +132,7 @@ public class DatabaseManager {
     }
 
     // addPlayersToLootSplit(String splitId, List<String> playerNames, long guildId) using addBatch() and executeBatch()
-    public void addPlayersToLootSplit(String splitId, List<String> playerNames, long guildId) {
+    public void addPlayersToLootSplit(String splitId, List<String> playerNames, long guildId) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -153,7 +153,7 @@ public class DatabaseManager {
     }
 
     // removePlayerFromLootSplit(String splitId, String playerName)
-    public void removePlayerFromLootSplit(String splitId, String playerName) {
+    public void removePlayerFromLootSplit(String splitId, String playerName) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -170,7 +170,7 @@ public class DatabaseManager {
     }
 
     // setLootSplitSilverAndItems(String splitID, Integer silver, Integer items)
-    public void setLootSplitSilverAndItems(String splitID, Integer silver, Integer items) {
+    public void setLootSplitSilverAndItems(String splitID, Integer silver, Integer items) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -188,7 +188,7 @@ public class DatabaseManager {
     }
 
     // getLootSplitSilverAndItems(String splitID)
-    public List<Integer> getLootSplitSilverAndItems(String splitID) {
+    public List<Integer> getLootSplitSilverAndItems(String splitID) throws SQLException {
         Connection connection = null;
         List<Integer> silverAndItems = new ArrayList<>();
         try {
@@ -211,7 +211,7 @@ public class DatabaseManager {
     }
 
     // makePlayerBalanceHalvedInLootSplit(String splitId, String playerName)
-    public void makePlayerBalanceHalvedInLootSplit(String splitId, String playerName) {
+    public void makePlayerBalanceHalvedInLootSplit(String splitId, String playerName) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -228,7 +228,7 @@ public class DatabaseManager {
     }
 
     // addBalanceToAllLootSplitPlayers(String splitId, Integer amount)
-    public void addBalanceToAllLootSplitPlayers(String splitId, Integer amount) {
+    public void addBalanceToAllLootSplitPlayers(String splitId, Integer amount) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -245,7 +245,7 @@ public class DatabaseManager {
     }
 
     // removeUserAmount(String username, Integer amount)
-    public void removeUserAmount(String username, Integer amount) {
+    public void removeUserAmount(String username, Integer amount) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -262,7 +262,7 @@ public class DatabaseManager {
     }
 
     // giveUserAmount(String username, Integer amount)
-    public void giveUserAmount(String username, Integer amount) {
+    public void giveUserAmount(String username, Integer amount) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -279,7 +279,7 @@ public class DatabaseManager {
     }
 
     // getHighestBalanceUsers()
-    public List<String> getHighestBalanceUsers() {
+    public List<String> getHighestBalanceUsers() throws SQLException {
         Connection connection = null;
         List<String> highestBalanceUsers = new ArrayList<>();
         try {
@@ -300,7 +300,7 @@ public class DatabaseManager {
     }
 
     // registerTheUser(String username)
-    public void registerTheUser(String username) {
+    public void registerTheUser(String username) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -319,7 +319,7 @@ public class DatabaseManager {
     }
 
     // uploadGuildList(String guildName, List<String> names, long guildId)
-    public void uploadGuildList(String guildName, List<String> names, long guildId) {
+    public void uploadGuildList(String guildName, List<String> names, long guildId) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
@@ -401,5 +401,31 @@ public class DatabaseManager {
             } catch (SQLException ignore) {
             }
         }
+    }
+
+    // isGuildListExists(String guildName, long guildId)
+    public boolean isGuildListExists(String guildName, long guildId) {
+        Connection connection = null;
+        boolean isExists = false;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM players WHERE guild_name = ? AND guild_id = ?")) {
+                statement.setString(1, guildName);
+                statement.setLong(2, guildId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        isExists = true;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error checking if guild list exists: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+        return isExists;
     }
 }
