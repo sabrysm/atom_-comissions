@@ -32,10 +32,11 @@ public class DatabaseManager {
             // users table (id, guild_id, cta, character name, last seen, status, party number)
             statement.execute("CREATE TABLE IF NOT EXISTS players (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "user_id INTEGER NOT NULL," +
                     "username TEXT NOT NULL," +
                     "balance INTEGER NOT NULL," +
-                    "registered BOOLEAN NOT NULL," +
                     "guild_name TEXT NOT NULL," +
+                    "registered BOOLEAN NOT NULL," +
                     "guild_id INTEGER NOT NULL" +
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS roles (" +
@@ -46,7 +47,8 @@ public class DatabaseManager {
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS players_roles (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    "username TEXT NOT NULL," +
+                    "user_id INTEGER NOT NULL," +
+                    "role_name TEXT NOT NULL," +
                     "time_left INTEGER," +
                     "guild_id INTEGER NOT NULL" +
                     ")");
@@ -73,14 +75,14 @@ public class DatabaseManager {
         }
     }
 
-    // getPlayerBalance(String playerName)
-    public int getPlayerBalance(String playerName) throws SQLException {
+    // getPlayerBalance(long userId)
+    public int getPlayerBalance(long userId) throws SQLException {
         Connection connection = null;
         int balance = 0;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("SELECT balance FROM players WHERE username = ?")) {
-                statement.setString(1, playerName);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT balance FROM players WHERE user_id = ?")) {
+                statement.setLong(1, userId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
                         balance = resultSet.getInt("balance");
@@ -299,13 +301,14 @@ public class DatabaseManager {
         return highestBalanceUsers;
     }
 
-    // registerTheUser(String username)
-    public void registerTheUser(String username) throws SQLException {
+    // registerTheUser(String username, long userId)
+    public void registerTheUser(String username, long userId) throws SQLException {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("UPDATE players SET registered = 1 WHERE username = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE players SET registered = 1, user_id = ? WHERE username = ?")) {
                 statement.setString(1, username);
+                statement.setLong(2, userId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -416,13 +419,86 @@ public class DatabaseManager {
         }
     }
 
-    // removePlayerRole(String playerName, long guildId)
-    public void removePlayerRole(String playerName, long guildId) {
+    // getRoleDuration(String roleName, long guildId)
+    public Integer getRoleDuration(String roleName, long guildId) {
+        Connection connection = null;
+        int duration = 0;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT duration_in_min FROM roles WHERE role_name = ? AND guild_id = ?")) {
+                statement.setString(1, roleName);
+                statement.setLong(2, guildId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        duration = resultSet.getInt("duration_in_min");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error getting role duration: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+        return duration;
+    }
+
+    // getPlayersWithExpiredRoles(long guildId) -> username, role_name
+    public List<String> getPlayersWithExpiredRoles(long guildId) {
+        Connection connection = null;
+        List<String> playersWithExpiredRoles = new ArrayList<>();
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT user_id, role_name FROM players_roles WHERE time_left <= 0 AND guild_id = ?")) {
+                statement.setLong(1, guildId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        playersWithExpiredRoles.add(resultSet.getString("user_id") + "|||" + resultSet.getString("role_name"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error getting players with expired roles: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+        return playersWithExpiredRoles;
+    }
+
+    // givePlayerRole(long userId, long guildId, int timeLeft)
+    public void givePlayerRole(long userId, long guildId, String roleName, int timeLeft) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players_roles WHERE username = ? AND guild_id = ?")) {
-                statement.setString(1, playerName);
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO players_roles (user_id, role_name, time_left, guild_id) VALUES (?, ?, ?, ?)")) {
+                statement.setLong(1, userId);
+                statement.setString(2, roleName);
+                statement.setInt(3, timeLeft);
+                statement.setLong(4, guildId);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.out.println("Error giving player role: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+    }
+
+    // removePlayerRole(String playerName, long guildId)
+    public void removePlayerRole(long userId, long guildId) {
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players_roles WHERE user_id = ? AND guild_id = ?")) {
+                statement.setLong(1, userId);
                 statement.setLong(2, guildId);
                 statement.executeUpdate();
             }
@@ -436,8 +512,26 @@ public class DatabaseManager {
         }
     }
 
+    // decrementTimeLeft(long guildId)
+    public void decrementTimeLeft(long guildId) {
+        Connection connection = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("UPDATE players_roles SET time_left = time_left - 1 WHERE guild_id = ?")) {
+                statement.setLong(1, guildId);
+                statement.executeUpdate();
+            }
+        } catch (SQLException e) {
+            System.out.println("Error decrementing time left: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {}
+        }
+    }
+
     // isGuildListExists(String guildName, long guildId)
-    public boolean isGuildListExists(String guildName, long guildId) {
+    public boolean isGuildListExists(String guildName, long guildId) throws SQLException {
         Connection connection = null;
         boolean isExists = false;
         try {
@@ -461,4 +555,5 @@ public class DatabaseManager {
         }
         return isExists;
     }
+
 }
