@@ -35,31 +35,36 @@ public class DatabaseManager {
                     "username TEXT NOT NULL," +
                     "balance INTEGER NOT NULL," +
                     "registered BOOLEAN NOT NULL," +
-                    "guild_name TEXT NOT NULL" +
+                    "guild_name TEXT NOT NULL," +
+                    "guild_id INTEGER NOT NULL" +
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS roles (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "role_name TEXT NOT NULL," +
-                    "duration_in_min INTEGER" +
+                    "duration_in_min INTEGER," +
+                    "guild_id INTEGER NOT NULL" +
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS players_roles (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "username TEXT NOT NULL," +
-                    "time_left INTEGER" +
+                    "time_left INTEGER," +
+                    "guild_id INTEGER NOT NULL" +
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS lootsplit_sessions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "split_id TEXT NOT NULL," +
                     "name TEXT NOT NULL," +
                     "silver INTEGER NOT NULL," +
-                    "items INTEGER NOT NULL" +
+                    "items INTEGER NOT NULL," +
+                    "guild_id INTEGER NOT NULL" +
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS lootsplit_players (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "split_id TEXT NOT NULL," +
                     "username TEXT NOT NULL," +
                     "balance INTEGER NOT NULL," +
-                    "is_halved BOOLEAN NOT NULL" +
+                    "is_halved BOOLEAN NOT NULL," +
+                    "guild_id INTEGER NOT NULL" +
                     ")");
         } catch (SQLException e) {
             System.out.println("Error creating tables: " + e.getMessage());
@@ -91,13 +96,14 @@ public class DatabaseManager {
     }
 
     // createNewLootSplitSession(String splitId, String name)
-    public void createNewLootSplitSession(String splitId, String name) {
+    public void createNewLootSplitSession(String splitId, String name, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_sessions (split_id, name, silver, items) VALUES (?, ?, 0, 0)")) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_sessions (split_id, name, silver, items, guild_id) VALUES (?, ?, 0, 0, ?)")) {
                 statement.setString(1, splitId);
                 statement.setString(2, name);
+                statement.setLong(3, guildId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -108,13 +114,14 @@ public class DatabaseManager {
     }
 
     // addPlayerToLootSplit(String splitId, String playerName)
-    public void addPlayerToLootSplit(String splitId, String playerName) {
+    public void addPlayerToLootSplit(String splitId, String playerName, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_players (split_id, username, balance, is_halved) VALUES (?, ?, 0, 0)")) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_players (split_id, username, balance, is_halved, guild_id) VALUES (?, ?, 0, 0, ?)")) {
                 statement.setString(1, splitId);
                 statement.setString(2, playerName);
+                statement.setLong(3, guildId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -125,14 +132,15 @@ public class DatabaseManager {
     }
 
     // addPlayersToLootSplit(String splitId, List<String> playerNames) using addBatch() and executeBatch()
-    public void addPlayersToLootSplit(String splitId, List<String> playerNames) {
+    public void addPlayersToLootSplit(String splitId, List<String> playerNames, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_players (split_id, username, balance, is_halved) VALUES (?, ?, 0, 0)")) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_players (split_id, username, balance, is_halved, guild_id) VALUES (?, ?, 0, 0, ?)")) {
                 for (String playerName : playerNames) {
                     statement.setString(1, splitId);
                     statement.setString(2, playerName);
+                    statement.setLong(3, guildId);
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -311,14 +319,15 @@ public class DatabaseManager {
     }
 
     // uploadGuildList(String guildName, List<String> names)
-    public void uploadGuildList(String guildName, List<String> names) {
+    public void uploadGuildList(String guildName, List<String> names, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO players (username, balance, registered, guild_name) VALUES (?, 0, 0, ?)")) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO players (username, balance, registered, guild_name, guild_id) VALUES (?, 0, 0, ?, ?)")) {
                 for (String name : names) {
                     statement.setString(1, name);
                     statement.setString(2, guildName);
+                    statement.setLong(3, guildId);
                     statement.addBatch();
                 }
                 statement.executeBatch();
@@ -334,12 +343,13 @@ public class DatabaseManager {
     }
 
     // removeGuildList(String guildName)
-    public void removeGuildList(String guildName) {
+    public void removeGuildList(String guildName, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players WHERE guild_name = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players WHERE guild_name = ? AND guild_id = ?")) {
                 statement.setString(1, guildName);
+                statement.setLong(2, guildId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
@@ -353,13 +363,14 @@ public class DatabaseManager {
     }
 
     // addNewRole(String roleName, Integer durationInMin)
-    public void addNewRole(String roleName, Integer durationInMin) {
+    public void addNewRole(String roleName, Integer durationInMin, long guildId) {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO roles (role_name, duration_in_min) VALUES (?, ?)")) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO roles (role_name, duration_in_min, guild_id) VALUES (?, ?, ?)")) {
                 statement.setString(1, roleName);
                 statement.setInt(2, durationInMin);
+                statement.setLong(3, guildId);
                 statement.executeUpdate();
             }
         } catch (SQLException e) {
