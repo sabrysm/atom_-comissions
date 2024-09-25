@@ -1,6 +1,6 @@
 # atom_-comissions
 
-## Commission 4: Lootsplit Bot
+## Commission 3: Lootsplit Bot
 ### Price: $120
 
 #### lootsplit commands:
