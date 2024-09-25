@@ -318,6 +318,39 @@ public class DatabaseManager {
         }
     }
 
+    public void postProcessPlayersTable() throws SQLException {
+        /**
+         * This function will be used to post-process the users table after the data has been uploaded.
+         * The function will:
+         *   Copy the character names from the "players" table to the demo table
+         *   to be used for spellfix1 extension
+         */
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        SQLiteConfig config = new SQLiteConfig();
+        try {
+            config.enableLoadExtension(true);
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path, config.toProperties());
+            try (Statement statement = connection.createStatement();) {
+                statement.setQueryTimeout(30);
+                statement.execute("SELECT load_extension('spellfix')");
+                statement.execute("CREATE VIRTUAL TABLE IF NOT EXISTS demo USING spellfix1;");
+            } catch (SQLException e) {
+                System.out.println("Error loading extension: " + e.getMessage());
+            }
+            config.enableLoadExtension(false);
+            preparedStatement = connection.prepareStatement("INSERT INTO demo(word) SELECT username FROM players " +
+                    "WHERE NOT EXISTS (SELECT 1 FROM demo WHERE word = players.username);");
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Post Process Exception: Error Code=" + e.getErrorCode());
+            e.printStackTrace();
+        } finally {
+            if (preparedStatement != null) try { preparedStatement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+    }
+
     // uploadGuildList(String guildName, List<String> names, long guildId)
     public void uploadGuildList(String guildName, List<String> names, long guildId) throws SQLException {
         Connection connection = null;
