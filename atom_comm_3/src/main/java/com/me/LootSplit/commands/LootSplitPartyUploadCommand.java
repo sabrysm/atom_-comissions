@@ -1,8 +1,8 @@
 package com.me.LootSplit.commands;
 
 import com.me.LootSplit.database.DatabaseManager;
-import com.me.LootSplit.utils.CTA;
-import com.me.LootSplit.utils.PartyUploadHelper;
+import com.me.LootSplit.utils.LootSplitSession;
+import com.me.LootSplit.utils.LootSplitPartyUploadHelper;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -12,20 +12,22 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.List;
 
+import static com.me.LootSplit.utils.Messages.sendNoActiveLootSplitSessionMessage;
+import static com.me.LootSplit.utils.Messages.sendNoValidNamesFoundMessage;
+
 public class LootSplitPartyUploadCommand implements ISlashSubCommand {
 
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
-        int partyNumber = event.getOption("party_number").getAsInt();
         Message.Attachment image = event.getOption("party_image").getAsAttachment();
         InputStream imageStream = image.getProxy().download().join();
-        PartyUploadHelper partyUploadHelper;
-        String ctaID;
+        LootSplitPartyUploadHelper lootSplitPartyUploadHelper;
+        String splitID;
         try {
-            ctaID = CTA.getCTAIDFromGuild(event.getGuild().getIdLong());
-            partyUploadHelper = new PartyUploadHelper(ctaID, event.getGuild().getIdLong(), partyNumber);
-            if (ctaID == null) {
-                partyUploadHelper.sendNoCTAActiveMessage(event);
+            splitID = LootSplitSession.getLootSplitIdFromGuild(event.getGuild().getIdLong());
+            lootSplitPartyUploadHelper = new LootSplitPartyUploadHelper(splitID, event.getGuild().getIdLong());
+            if (splitID == null) {
+                sendNoActiveLootSplitSessionMessage(event);
                 return;
             }
         } catch (SQLException e) {
@@ -35,28 +37,25 @@ public class LootSplitPartyUploadCommand implements ISlashSubCommand {
         // Get the valid names from the image
         try {
             DatabaseManager manager = new DatabaseManager();
-            List<String> validNames = partyUploadHelper.getValidNamesFromImage(imageStream);
-            // Clear the users data for the party before adding the new data
-//            manager.clearUsersDataForParty(event.getGuild().getIdLong(), ctaID, partyNumber);
-            System.out.printf("Cleared users history for party %d", partyNumber);
+            List<String> validNames = lootSplitPartyUploadHelper.getValidNamesFromImage(imageStream);
             if (validNames.isEmpty()) {
                 System.out.print("No valid names found\n");
-                partyUploadHelper.sendNoValidNamesFoundMessage(event);
+                sendNoValidNamesFoundMessage(event);
                 return;
             }
 
             // Add the players to the party
-            partyUploadHelper.addPlayersToParty(event);
+            lootSplitPartyUploadHelper.addPlayersToParty(event);
             System.out.printf("Valid Names: %s\n", validNames);
             // Send a success message
-            partyUploadHelper.sendPartyUploadSuccessMessage(event);
+            lootSplitPartyUploadHelper.sendPartyUploadSuccessMessage(event);
 
         } catch (SQLException e) {
             System.out.printf("An SQL Exception occurred while adding the players to the party: %s\n", e.getMessage());
             sendErrorAddingPlayersToParty(event);
             return;
         } catch (NullPointerException e) {
-            partyUploadHelper.sendCorrectCroppingFormat(event);
+            lootSplitPartyUploadHelper.sendCorrectCroppingFormat(event);
             return;
         } catch (Exception e) {
             System.out.printf("A General Exception occurred while uploading the party: %s\n", e.getMessage());
