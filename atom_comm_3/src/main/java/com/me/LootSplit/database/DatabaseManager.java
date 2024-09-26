@@ -1,16 +1,11 @@
 package com.me.LootSplit.database;
 
-import com.me.LootSplit.utils.CTA;
 import org.sqlite.SQLiteConfig;
 
 import java.sql.*;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class DatabaseManager {
     private final String path = "src/main/java/com/me/LootSplit/database/database.db";
@@ -115,6 +110,29 @@ public class DatabaseManager {
         }
     }
 
+    // getLootSplitId(long guildId)
+    public String getLootSplitId(long guildId) throws SQLException {
+        Connection connection = null;
+        String splitId = "";
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT split_id FROM lootsplit_sessions WHERE guild_id = ?")) {
+                statement.setLong(1, guildId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        splitId = resultSet.getString("split_id");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error getting loot split id: " + e.getMessage());
+        } finally {
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return splitId;
+    }
+
+
     // addPlayerToLootSplit(String splitId, String playerName, long guildId)
     public void addPlayerToLootSplit(String splitId, String playerName, long guildId) throws SQLException {
         Connection connection = null;
@@ -138,7 +156,7 @@ public class DatabaseManager {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_players (split_id, username, balance, is_halved, guild_id) VALUES (?, ?, 0, 0, ?)")) {
+            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO lootsplit_players (split_id, username, balance, is_halved, guild_id) VALUES (?, ?, 0, 0, ?) WHERE NOT EXISTS (SELECT 1 FROM lootsplit_players WHERE split_id = ? AND username = ?)")) {
                 for (String playerName : playerNames) {
                     statement.setString(1, splitId);
                     statement.setString(2, playerName);
@@ -227,6 +245,62 @@ public class DatabaseManager {
         } finally {
             if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
         }
+    }
+
+    // a function named spellFixMatch that takes a string and checks if it is similar to any of the words in the database
+    // if it is, return the word from the database (first match if multiple matches)
+    // if it is not, return null
+    public String spellFixMatch(String word, Long guildID) throws SQLException {
+        Connection connection = null;
+        PreparedStatement preparedStatement = null;
+        SQLiteConfig config = new SQLiteConfig();
+        ResultSet resultSet = null;
+        String match = null;
+        String[] forbidden_words = {"Cluster", "preferrad", "Access", "Priority", "This", "setting", "determines", "who", "gets", "preferred", "access", "overcrowded", "clusters.", "Party", "Priority", "First", "Access)", "Party's", "Priority", "within", "Alliance/Guild:", "Dit)", "Party", "Member", "Priority",
+                "First", "Access)"};
+        // Check if the word is in the forbidden words list
+        for (String forbidden_word : forbidden_words) {
+            if (word.equals(forbidden_word)) {
+                return null;
+            }
+        }
+        try {
+            config.enableLoadExtension(true);
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path, config.toProperties());
+            try (Statement statement = connection.createStatement();) {
+                statement.setQueryTimeout(30);
+                statement.execute("SELECT load_extension('spellfix')");
+                statement.execute("CREATE VIRTUAL TABLE IF NOT EXISTS demo USING spellfix1;");
+            } catch (SQLException e) {
+                System.out.println("Error loading extension: " + e.getMessage());
+            }
+            config.enableLoadExtension(false);
+            preparedStatement = connection.prepareStatement("SELECT COUNT(*) FROM demo");
+            resultSet = preparedStatement.executeQuery();
+            if (resultSet.getInt(1) == 0) {
+                System.out.println("No words in the database");
+                return null;
+            }
+            // SELECT word, editdist3(LOWER(demo.word), LOWER('word'), 800) AS distance FROM demo WHERE editdist3(LOWER(demo.word), LOWER('word'), 800) < 350 ORDER BY distance ASC LIMIT 1;
+            preparedStatement = connection.prepareStatement("SELECT demo.word, editdist3(LOWER(demo.word), LOWER(?), 800) AS distance FROM demo JOIN players ON players.username = demo.word WHERE editdist3(LOWER(demo.word), LOWER(?), 800) < 350 AND LENGTH(?) > 3 AND players.guild_id = ? ORDER BY distance ASC LIMIT 1");
+            preparedStatement.setString(1, word);
+            preparedStatement.setString(2, word);
+            preparedStatement.setString(3, word);
+            preparedStatement.setLong(4, guildID);
+            resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                match = resultSet.getString("word");
+            }
+        } catch (SQLException e) {
+            System.out.println("Spellfix Exception: Error Code=" + e.getErrorCode());
+            e.printStackTrace();
+        }
+        finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (preparedStatement != null) try { preparedStatement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return match;
     }
 
     // addBalanceToAllLootSplitPlayers(String splitId, Integer amount)
@@ -383,7 +457,7 @@ public class DatabaseManager {
         Connection connection = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players WHERE guild_name = ? AND guild_id = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM players WHERE LOWER(guild_name) = LOWER(?) AND guild_id = ?")) {
                 statement.setString(1, guildName);
                 statement.setLong(2, guildId);
                 statement.executeUpdate();
@@ -536,7 +610,7 @@ public class DatabaseManager {
         boolean isExists = false;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM players WHERE guild_name = ? AND guild_id = ?")) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM players WHERE LOWER(guild_name) = LOWER(?) AND guild_id = ?")) {
                 statement.setString(1, guildName);
                 statement.setLong(2, guildId);
                 try (ResultSet resultSet = statement.executeQuery()) {
@@ -555,5 +629,56 @@ public class DatabaseManager {
         }
         return isExists;
     }
+
+    // isUserRegistered(long userId)
+    public boolean isUserRegistered(long userId) throws SQLException {
+        Connection connection = null;
+        boolean isRegistered = false;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT registered FROM players WHERE user_id = ?")) {
+                statement.setLong(1, userId);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        isRegistered = resultSet.getBoolean("registered");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error checking if user is registered: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+        return isRegistered;
+    }
+
+    // isUserExists(String username)
+    public boolean isUserExists(String username) throws SQLException {
+        Connection connection = null;
+        boolean isExists = false;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM players WHERE username = ?")) {
+                statement.setString(1, username);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        isExists = true;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error checking if user exists: " + e.getMessage());
+        } finally {
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+        return isExists;
+    }
+
 
 }
