@@ -27,6 +27,7 @@ public class GuildCommands implements ISlashCommand {
 
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
+        event.deferReply(false).queue();
         switch (event.getFullCommandName()) {
             case "guild upload":
                 GuildUploadCommand guildUploadCommand = new GuildUploadCommand();

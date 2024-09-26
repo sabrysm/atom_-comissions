@@ -14,6 +14,7 @@ public class GuildRemoveCommand implements ISlashSubCommand {
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         try {
+            event.deferReply(false).queue();
             final String guildName = event.getOption("guild_name").getAsString();
             final DatabaseManager databaseManager = new DatabaseManager();
             databaseManager.removeGuildList(guildName, event.getGuild().getIdLong());

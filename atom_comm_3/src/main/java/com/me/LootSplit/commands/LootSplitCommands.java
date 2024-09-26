@@ -28,6 +28,15 @@ public class LootSplitCommands implements ISlashCommand {
                                                 .addOption(OptionType.ATTACHMENT, "file", "The text file that has Guild Names", false)
                                 )
                 )
+               .addSubcommandGroups(
+                        new SubcommandGroupData("party", "Party related commands")
+
+                                .addSubcommands(
+                                        new SubcommandData("upload", "Uploads the loot split for the party")
+                                                .addOption(OptionType.ATTACHMENT, "party_image", "The image to upload", true)
+                                )
+
+                )
                 .addSubcommands(
                         new SubcommandData("add", "Adds a player to the current LootSplit session")
                                 .addOption(OptionType.STRING, "username", "The player name", true)
@@ -48,58 +57,41 @@ public class LootSplitCommands implements ISlashCommand {
                 .addSubcommands(
                         new SubcommandData("confirm", "Confirms the LootSplit with the specified ID")
                                 .addOption(OptionType.STRING, "split_id", "The split ID", true)
-                )
-               .addSubcommandGroups(
-                        new SubcommandGroupData("party", "Party related commands")
-
-                                .addSubcommands(
-                                        new SubcommandData("upload", "Uploads the loot split for the party")
-                                                .addOption(OptionType.INTEGER, "party_number", "The party number", true)
-                                                .addOption(OptionType.ATTACHMENT, "party_image", "The image to upload", true)
-                                )
-
                 );
     }
 
     public void execute(@NotNull SlashCommandInteractionEvent event) {
+        event.deferReply(false).queue();
         switch (event.getFullCommandName()) {
             case "lootsplit create":
-                event.deferReply(false).queue();
                 LootSplitCreateCommand createCommand = new LootSplitCreateCommand();
                 createCommand.execute(event);
                 break;
             case "lootsplit guild upload":
-                event.deferReply(false).queue();
                 LootSplitGuildUploadCommand guildUploadCommand = new LootSplitGuildUploadCommand();
                 guildUploadCommand.execute(event);
                 break;
             case "lootsplit party upload":
-                event.deferReply(false).queue();
                 LootSplitPartyUploadCommand lootSplitPartyUploadCommand = new LootSplitPartyUploadCommand();
                 lootSplitPartyUploadCommand.execute(event);
                 break;
             case "lootsplit add":
-                event.deferReply(false).queue();
                 LootSplitAddCommand lootSplitAddCommand = new LootSplitAddCommand();
                 lootSplitAddCommand.execute(event);
                 break;
             case "lootsplit remove":
-                event.deferReply(false).queue();
                 LootSplitRemoveCommand lootSplitRemoveCommand = new LootSplitRemoveCommand();
                 lootSplitRemoveCommand.execute(event);
                 break;
             case "lootsplit set":
-                event.deferReply(false).queue();
                 LootSplitSetCommand lootSplitSetCommand = new LootSplitSetCommand();
                 lootSplitSetCommand.execute(event);
                 break;
             case "lootsplit half":
-                event.deferReply(false).queue();
                 LootSplitHalfBalanceCommand halfCommand = new LootSplitHalfBalanceCommand();
                 halfCommand.execute(event);
                 break;
             case "lootsplit confirm":
-                event.deferReply(false).queue();
                 LootSplitConfirmCommand confirmCommand = new LootSplitConfirmCommand();
                 confirmCommand.execute(event);
                 break;

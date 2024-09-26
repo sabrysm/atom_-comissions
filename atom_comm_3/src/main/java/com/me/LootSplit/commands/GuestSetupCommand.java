@@ -23,6 +23,7 @@ public class GuestSetupCommand implements ISlashCommand {
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         try {
+            event.deferReply(false).queue();
             String role = event.getOption("role").getAsString();
             Integer duration = event.getOption("duration").getAsInt();
             DatabaseManager databaseManager = new DatabaseManager();

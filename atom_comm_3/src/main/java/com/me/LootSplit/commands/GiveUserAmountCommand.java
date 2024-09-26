@@ -18,6 +18,7 @@ public class GiveUserAmountCommand implements ISlashCommand {
 
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
+        event.deferReply(true).queue();
     }
 
 }

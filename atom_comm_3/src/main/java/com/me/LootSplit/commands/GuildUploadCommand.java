@@ -1,12 +1,8 @@
 package com.me.LootSplit.commands;
 
-import com.me.LootSplit.utils.CTA;
 import com.me.LootSplit.utils.GuildUploadHelper;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -16,12 +12,13 @@ import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 
+import static com.me.LootSplit.utils.Messages.*;
+
 public class GuildUploadCommand implements ISlashSubCommand{
     private CompletableFuture<Void> cf;
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         File textFile;
-
         if (event.getOption("text") == null && event.getOption("file") == null) {
             sendErrorProvideTextOptionMessage(event);
             return;
@@ -33,7 +30,7 @@ public class GuildUploadCommand implements ISlashSubCommand{
             String guildName = event.getOption("guild_name").getAsString();
             try {
                 final GuildUploadHelper guildUploadHelperForText = new GuildUploadHelper(text, guildName, event.getGuild().getIdLong(), false);
-                guildUploadHelperForText.uploadGuildUploadUsers();
+                guildUploadHelperForText.uploadGuildUsers();
                 guildUploadHelperForText.sendGuildUploadPaginator(event);
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -61,18 +58,17 @@ public class GuildUploadCommand implements ISlashSubCommand{
                         final String textFromFile = new String(Files.readAllBytes(finalTextFile.toPath()));
                         String guildName = event.getOption("guild_name").getAsString();
                         final GuildUploadHelper guildUploadHelperForFile = new GuildUploadHelper(textFromFile, guildName, event.getGuild().getIdLong(), true);
-                        guildUploadHelperForFile.uploadGuildUploadUsers();
+                        guildUploadHelperForFile.uploadGuildUsers();
                         guildUploadHelperForFile.sendGuildUploadPaginator(event);
                         finalTextFile.delete();
 
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        sendErrorMessage("IOException", "An error occurred while reading the GuildUpload file", 0xFF0000, event);
+                        return;
                     } catch (SQLException e) {
-                        e.printStackTrace();
                         sendErrorUploadMessage(event);
                         return;
                     } catch (Exception e) {
-                        e.printStackTrace();
                         sendErrorReadingMessage(event);
                         return;
                     }
@@ -82,44 +78,5 @@ public class GuildUploadCommand implements ISlashSubCommand{
             sendNotGuildListMessage(event);
             return;
         }
-    }
-
-
-    /* Error Messages */
-
-    public void sendNotGuildListMessage(SlashCommandInteractionEvent event) {
-        EmbedBuilder errorEmbed = new EmbedBuilder();
-        errorEmbed.setTitle("Invalid Format").setDescription("The provided is not a Guild List").setColor(0xFF0000);
-        event.getHook().sendMessageEmbeds(errorEmbed.build()).setEphemeral(true).queue();
-    }
-
-    public void sendErrorUploadMessage(SlashCommandInteractionEvent event) {
-        EmbedBuilder errorEmbed = new EmbedBuilder();
-        errorEmbed.setTitle("An error occurred while uploading the data").setDescription("An error occurred while uploading the data").setColor(0xFF0000);
-        event.getHook().sendMessageEmbeds(errorEmbed.build()).setEphemeral(true).queue();
-    }
-
-    public void sendErrorReadingMessage(SlashCommandInteractionEvent event) {
-        EmbedBuilder errorEmbed = new EmbedBuilder();
-        errorEmbed.setTitle("An error occurred while reading the data").setDescription("An error occurred while reading the data").setColor(0xFF0000);
-        event.getHook().sendMessageEmbeds(errorEmbed.build()).setEphemeral(true).queue();
-    }
-
-    public void sendErrorConnectingDatabaseMessage(SlashCommandInteractionEvent event) {
-        EmbedBuilder errorEmbed = new EmbedBuilder();
-        errorEmbed.setTitle("An error occurred while connecting to the database").setDescription("An error occurred while connecting to the database").setColor(0xFF0000);
-        event.getHook().sendMessageEmbeds(errorEmbed.build()).setEphemeral(true).queue();
-    }
-
-    public void sendErrorOnlyOneOptionAllowedMessage(SlashCommandInteractionEvent event) {
-        EmbedBuilder errorEmbed = new EmbedBuilder();
-        errorEmbed.setTitle("Only one option is allowed").setDescription("Only one option is allowed").setColor(0xFF0000);
-        event.getHook().sendMessageEmbeds(errorEmbed.build()).setEphemeral(true).queue();
-    }
-
-    public void sendErrorProvideTextOptionMessage(SlashCommandInteractionEvent event) {
-        EmbedBuilder errorEmbed = new EmbedBuilder();
-        errorEmbed.setTitle("You need to provide a text option").setDescription("You need to provide a text option").setColor(0xFF0000);
-        event.getHook().sendMessageEmbeds(errorEmbed.build()).setEphemeral(true).queue();
     }
 }

@@ -16,6 +16,6 @@ public class LeaderboardCommand implements ISlashCommand {
 
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
+        event.deferReply(false).queue();
     }
-
 }
