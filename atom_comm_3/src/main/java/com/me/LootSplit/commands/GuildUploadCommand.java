@@ -4,6 +4,9 @@ import com.me.LootSplit.utils.CTA;
 import com.me.LootSplit.utils.GuildUploadHelper;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -15,19 +18,10 @@ import java.util.concurrent.CompletableFuture;
 
 public class GuildUploadCommand implements ISlashSubCommand{
     private CompletableFuture<Void> cf;
-
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         File textFile;
-        String ctaID;
 
-        try {
-            ctaID = CTA.getCTAIDFromGuild(event.getGuild().getIdLong());
-        } catch (SQLException e) {
-            e.printStackTrace();
-            sendErrorConnectingDatabaseMessage(event);
-            return;
-        }
         if (event.getOption("text") == null && event.getOption("file") == null) {
             sendErrorProvideTextOptionMessage(event);
             return;
@@ -36,9 +30,10 @@ public class GuildUploadCommand implements ISlashSubCommand{
             return;
         } else if (event.getOption("text") != null) {
             String text = event.getOption("text").getAsString();
+            String guildName = event.getOption("guild_name").getAsString();
             try {
-                final GuildUploadHelper guildUploadHelperForText = new GuildUploadHelper(text, ctaID, event.getGuild().getIdLong(), false);
-                guildUploadHelperForText.uploadGuildUploadUsers(ctaID, event);
+                final GuildUploadHelper guildUploadHelperForText = new GuildUploadHelper(text, guildName, event.getGuild().getIdLong(), false);
+                guildUploadHelperForText.uploadGuildUploadUsers();
                 guildUploadHelperForText.sendGuildUploadPaginator(event);
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -64,8 +59,9 @@ public class GuildUploadCommand implements ISlashSubCommand{
                 } else {
                     try {
                         final String textFromFile = new String(Files.readAllBytes(finalTextFile.toPath()));
-                        final GuildUploadHelper guildUploadHelperForFile = new GuildUploadHelper(textFromFile, ctaID, event.getGuild().getIdLong(), true);
-                        guildUploadHelperForFile.uploadGuildUploadUsers(ctaID, event);
+                        String guildName = event.getOption("guild_name").getAsString();
+                        final GuildUploadHelper guildUploadHelperForFile = new GuildUploadHelper(textFromFile, guildName, event.getGuild().getIdLong(), true);
+                        guildUploadHelperForFile.uploadGuildUploadUsers();
                         guildUploadHelperForFile.sendGuildUploadPaginator(event);
                         finalTextFile.delete();
 
@@ -87,6 +83,7 @@ public class GuildUploadCommand implements ISlashSubCommand{
             return;
         }
     }
+
 
     /* Error Messages */
 

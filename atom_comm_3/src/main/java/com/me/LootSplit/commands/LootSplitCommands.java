@@ -95,7 +95,7 @@ public class LootSplitCommands implements ISlashCommand {
                 break;
             case "lootsplit half":
                 event.deferReply(false).queue();
-                LootSplitHalfCommand halfCommand = new LootSplitHalfCommand();
+                LootSplitHalfBalanceCommand halfCommand = new LootSplitHalfBalanceCommand();
                 halfCommand.execute(event);
                 break;
             case "lootsplit confirm":
