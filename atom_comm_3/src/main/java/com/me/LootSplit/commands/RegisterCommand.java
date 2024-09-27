@@ -1,7 +1,6 @@
 package com.me.LootSplit.commands;
 
 import com.me.LootSplit.database.DatabaseManager;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -26,6 +25,7 @@ public class RegisterCommand implements ISlashCommand {
         try {
             String username = event.getOption("username").getAsString();
             DatabaseManager databaseManager = new DatabaseManager();
+
             if (databaseManager.isUserExists(username)) {
                 sendUserAlreadyExistsMessage(event);
                 return;
@@ -37,7 +37,7 @@ public class RegisterCommand implements ISlashCommand {
                 sendUserRegisteredSuccessfullyMessage(event, username);
             }
         } catch (SQLException e) {
-            raiseSQLExceptionError("Could not register user");
+            raiseSQLError("Could not register user");
         } catch (Exception e) {
             raiseUnknownError("Could not register user");
         }
