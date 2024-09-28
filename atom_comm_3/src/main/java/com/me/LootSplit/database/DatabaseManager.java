@@ -52,6 +52,7 @@ public class DatabaseManager {
             statement.execute("CREATE TABLE IF NOT EXISTS lootsplit_sessions (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                     "split_id TEXT NOT NULL," +
+                    "status TEXT NOT NULL," +
                     "name TEXT NOT NULL," +
                     "silver INTEGER NOT NULL," +
                     "items INTEGER NOT NULL," +
@@ -101,10 +102,11 @@ public class DatabaseManager {
         PreparedStatement statement = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            statement = connection.prepareStatement("INSERT INTO lootsplit_sessions (split_id, name, silver, items, guild_id) VALUES (?, ?, 0, 0, ?)");
+            statement = connection.prepareStatement("INSERT INTO lootsplit_sessions (split_id, status, name, silver, items, guild_id) VALUES (?, ?, ?, 0, 0, ?)");
             statement.setString(1, splitId);
-            statement.setString(2, name);
-            statement.setLong(3, guildId);
+            statement.setString(2, "active");
+            statement.setString(3, name);
+            statement.setLong(4, guildId);
             statement.executeUpdate();
         } finally {
             if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
@@ -672,7 +674,7 @@ public class DatabaseManager {
         ResultSet resultSet = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            statement = connection.prepareStatement("SELECT COUNT(*) FROM lootsplit_sessions WHERE guild_id = ?");
+            statement = connection.prepareStatement("SELECT COUNT(*) FROM lootsplit_sessions WHERE status = 'active' AND guild_id = ?");
             statement.setLong(1, guildId);
             resultSet = statement.executeQuery();
             if (resultSet.next()) {
@@ -761,6 +763,27 @@ public class DatabaseManager {
             }
         }
         return isExists;
+    }
+
+    // endLootSplitSession(long guildId)
+    public void endLootSplitSession(long guildId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("UPDATE lootsplit_sessions SET status = 'inactive' WHERE guild_id = ?");
+            statement.setLong(1, guildId);
+            statement.executeUpdate();
+        } finally {
+            if (statement != null) try {
+                statement.close();
+            } catch (SQLException ignore) {
+            }
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
     }
 
     // getLootSplitPlayersCount(String splitId, long guildId)

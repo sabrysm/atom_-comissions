@@ -25,7 +25,11 @@ public class LootSplitConfirmCommand implements ISlashSubCommand {
             silver = silverAndItems.get(0);
             items = silverAndItems.get(1);
             double amountToSplit = (silver + items)*0.7 / databaseManager.getLootSplitPlayersCount(splitId, event.getGuild().getIdLong());
+            // Add the amount to all players
             databaseManager.addBalanceToAllLootSplitPlayers(splitId, amountToSplit);
+            // End the session
+            databaseManager.endLootSplitSession(event.getGuild().getIdLong());
+            // Send the message
             sendAmountAddedToAllPlayers(event, amountToSplit);
         } catch (SQLException e) {
             raiseSQLError("Error confirming LootSplit: " + e.getMessage());
