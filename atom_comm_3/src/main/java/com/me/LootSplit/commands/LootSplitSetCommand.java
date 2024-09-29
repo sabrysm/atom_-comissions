@@ -22,7 +22,7 @@ public class LootSplitSetCommand implements ISlashSubCommand {
             }
             String splitId = LootSplitSession.getLootSplitIdFromGuild(event.getGuild().getIdLong());
             databaseManager.setLootSplitSilverAndItems(splitId, silver, items);
-            sendMessage("LootSplit Set", "LootSplit set to " + silver + " silver and " + items + " items", 0x00FF00, event);
+            sendMessage("LootSplit Set", "LootSplit set to " + silver + " silver and " + items + " item value", 0x6064f4, event);
         } catch (SQLException e) {
             raiseSQLError("Error setting LootSplit: " + e.getMessage());
         } catch (Exception e) {

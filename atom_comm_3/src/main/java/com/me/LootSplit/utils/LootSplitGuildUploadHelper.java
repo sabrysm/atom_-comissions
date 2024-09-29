@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
+import javax.xml.crypto.Data;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +22,13 @@ public class LootSplitGuildUploadHelper {
     private final List<String> players = new ArrayList<>();
     private final long guildID;
     private final String splitID;
+    private final String uploadID;
     private final boolean isFile;
 
     public LootSplitGuildUploadHelper(String text, String splitID, long guildID, boolean isFile) throws Exception {
         this.guildID = guildID;
         this.splitID = splitID;
+        this.uploadID = generateUploadId();
         this.isFile = isFile;
         parseText(text);
     }
@@ -34,6 +37,17 @@ public class LootSplitGuildUploadHelper {
     public void uploadGuildUsers() throws SQLException {
         // Add the users to the database
         addUsersToDatabase();
+    }
+
+    private String generateUploadId() {
+        String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder builder = new StringBuilder();
+        int count = 7;
+        while (count-- != 0) {
+            int character = (int)(Math.random()*ALPHA_NUMERIC_STRING.length());
+            builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+        }
+        return builder.toString();
     }
 
     public void sendGuildUploadPaginator(SlashCommandInteractionEvent event) {
@@ -86,37 +100,53 @@ public class LootSplitGuildUploadHelper {
         } catch (Exception e) {
             System.out.println("Error parsing the text: " + e.getMessage());
         }
-
     }
 
     public List<MessageEmbed> getPaginatorEmbed() {
         List<MessageEmbed> pages = new ArrayList<>();
-        int usersPerPage = 10;
-        int totalPages = (int) (Math.ceil((double) players.size() / usersPerPage));
-//        System.out.println("Number of users: " + players.size());
-        int currentPage = 0;
-//        System.out.println("Number of users with last seen: " + usersWithLastSeen.size());
-        int totalUsersNum = players.size();
-        int counter = 0;
-        for (int i = 0; i < players.size(); i++) {
-            EmbedBuilder newPage = new EmbedBuilder();
-            newPage.setTitle("LootSplit Guild Upload - Page " + (currentPage + 1));
-            StringBuilder pageContent = new StringBuilder();
-            String header = " **Player Name**\n";
-            for (int j = i; j < i + usersPerPage && j < totalUsersNum; j++) {
-                counter++;
-                String line = "- **" + players.get(j) + "\n";
-                pageContent.append(line);
+        try {
+            DatabaseManager manager = new DatabaseManager();
+            List<String> registeredUsers = manager.getLootSplitPlayersWithUploadId(uploadID, splitID, guildID);
+            System.out.printf("Number of registered users: %d\n", registeredUsers.size());
+            int usersPerPage = 10;
+            int totalPages = (int) (Math.ceil((double) registeredUsers.size() / usersPerPage));
+    //        System.out.println("Number of users: " + registeredUsers.size());
+            int currentPage = 0;
+    //        System.out.println("Number of users with last seen: " + usersWithLastSeen.size());
+            int totalUsersNum = registeredUsers.size();
+            int counter = 0;
+            if (totalUsersNum == 0) {
+                EmbedBuilder newPage = new EmbedBuilder();
+                newPage.setTitle("LootSplit Guild Upload - Page " + (currentPage + 1));
+                newPage.setDescription("No users have been added, \nbecause none of the users in the list are registered in the database.");
+                newPage.setFooter("Page 1 of 1");
+                newPage.setColor(0x6064f4); // Blue
+                pages.add(newPage.build());
+                return pages;
             }
-            newPage.setDescription("Total number of users added: **" + totalUsersNum + "**\n\n" + header + pageContent.toString());
-            newPage.setFooter("Page " + (currentPage + 1) + " of " + (totalPages));
-            newPage.setColor(0x6064f4); // Blue
-            pages.add(newPage.build());
-            currentPage++;
-            i += usersPerPage - 1;
+            for (int i = 0; i < registeredUsers.size(); i++) {
+                EmbedBuilder newPage = new EmbedBuilder();
+                newPage.setTitle("LootSplit Guild Upload - Page " + (currentPage + 1));
+                StringBuilder pageContent = new StringBuilder();
+                String header = " **Player Name**\n";
+                for (int j = i; j < i + usersPerPage && j < totalUsersNum; j++) {
+                    counter++;
+                    String line = "- **" + registeredUsers.get(j) + "**\n";
+                    pageContent.append(line);
+                }
+                newPage.setDescription("Total number of users added: **" + totalUsersNum + "**\n\n" + header + pageContent.toString());
+                newPage.setFooter("Page " + (currentPage + 1) + " of " + (totalPages));
+                newPage.setColor(0x6064f4); // Blue
+                pages.add(newPage.build());
+                currentPage++;
+                i += usersPerPage - 1;
+            }
         }
-//        System.out.println("Total number of users: " + counter);
+        catch (Exception e) {
+            System.out.println("Error getting paginator embed: " + e.getMessage());
+        }
         return pages;
+//        System.out.println("Total number of users: " + counter);
     }
 
     public void addUsersToDatabase() throws SQLException {
@@ -128,7 +158,7 @@ public class LootSplitGuildUploadHelper {
             if (playersBatch.size() == 40 || i == players.size() - 1) {
                 // Upload the data to the database
                 try {
-                    manager.addPlayersToLootSplit(splitID, playersBatch, guildID);
+                    manager.addPlayersToLootSplit(uploadID, splitID, playersBatch, guildID);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }

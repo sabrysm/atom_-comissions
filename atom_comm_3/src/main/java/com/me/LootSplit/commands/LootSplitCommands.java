@@ -61,37 +61,44 @@ public class LootSplitCommands implements ISlashCommand {
     }
 
     public void execute(@NotNull SlashCommandInteractionEvent event) {
-        event.deferReply(false).queue();
         switch (event.getFullCommandName()) {
             case "lootsplit create":
+                event.deferReply(false).queue();
                 LootSplitCreateCommand createCommand = new LootSplitCreateCommand();
                 createCommand.execute(event);
                 break;
             case "lootsplit guild upload":
+                event.deferReply(false).queue();
                 LootSplitGuildUploadCommand guildUploadCommand = new LootSplitGuildUploadCommand();
                 guildUploadCommand.execute(event);
                 break;
             case "lootsplit party upload":
+                event.deferReply(false).queue();
                 LootSplitPartyUploadCommand lootSplitPartyUploadCommand = new LootSplitPartyUploadCommand();
                 lootSplitPartyUploadCommand.execute(event);
                 break;
             case "lootsplit add":
+                event.deferReply(false).queue();
                 LootSplitAddCommand lootSplitAddCommand = new LootSplitAddCommand();
                 lootSplitAddCommand.execute(event);
                 break;
             case "lootsplit remove":
+                event.deferReply(false).queue();
                 LootSplitRemoveCommand lootSplitRemoveCommand = new LootSplitRemoveCommand();
                 lootSplitRemoveCommand.execute(event);
                 break;
             case "lootsplit set":
+                event.deferReply(false).queue();
                 LootSplitSetCommand lootSplitSetCommand = new LootSplitSetCommand();
                 lootSplitSetCommand.execute(event);
                 break;
             case "lootsplit half":
+                event.deferReply(false).queue();
                 LootSplitHalfBalanceCommand halfCommand = new LootSplitHalfBalanceCommand();
                 halfCommand.execute(event);
                 break;
             case "lootsplit confirm":
+                event.deferReply(false).queue();
                 LootSplitConfirmCommand confirmCommand = new LootSplitConfirmCommand();
                 confirmCommand.execute(event);
                 break;

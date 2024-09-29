@@ -1,7 +1,15 @@
 package com.me.LootSplit.utils;
 
+import com.me.LootSplit.database.DatabaseManager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import org.apache.commons.collections4.OrderedMap;
+import org.apache.commons.lang3.StringUtils;
+
+import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.Set;
 
 
 public class Messages {
@@ -19,32 +27,79 @@ public class Messages {
         sendMessage("No LootSplit", "No LootSplit is currently active for this server", 0xFF0000, event);
     }
 
+    public static void sendAmountAddedToPlayer(SlashCommandInteractionEvent event, String playerName, double amount) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Amount Added");
+        embedBuilder.setDescription("Amount of " + amount + " has been added to **" + playerName + "**'s balance");
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
+    public static void sendAmountRemovedFromPlayer(SlashCommandInteractionEvent event, String playerName, double amount) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Amount Removed");
+        embedBuilder.setDescription("Amount of " + amount + " has been removed from **" + playerName + "**'s balance");
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
+    public static void sendAmountHalvedFromPlayer(SlashCommandInteractionEvent event, String playerName) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Amount Halved");
+        embedBuilder.setDescription("Amount has been halved from **" + playerName + "**'s balance");
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
+    public static void sendUserNotInGuildListMessage(SlashCommandInteractionEvent event, String username) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Not Found");
+        embedBuilder.setDescription("The username **" + username + "** is not in the Guild List");
+        embedBuilder.setColor(0xFF0000);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
+    public static void sendPlayerNotInLootSplitMessage(SlashCommandInteractionEvent event, String playerName) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Not Found");
+        embedBuilder.setDescription("The player **" + playerName + "** is not in the LootSplit session");
+        embedBuilder.setColor(0xFF0000);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
     public static void sendUserAlreadyExistsMessage(SlashCommandInteractionEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setTitle("User already exists");
+        embedBuilder.setTitle("Already Exists");
         embedBuilder.setDescription("The username you are trying to register already exists");
-        event.replyEmbeds(embedBuilder.build()).queue();
+        embedBuilder.setColor(0xFF0000);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
     public static void sendUserAlreadyRegisteredMessage(SlashCommandInteractionEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setTitle("User already registered");
+        embedBuilder.setTitle("Already Registered");
         embedBuilder.setDescription("You are already registered");
-        event.replyEmbeds(embedBuilder.build()).queue();
+        embedBuilder.setColor(0xFF0000);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
     public static void sendUserRegisteredSuccessfullyMessage(SlashCommandInteractionEvent event, String username) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setTitle("User registered successfully");
-        embedBuilder.setDescription("You have been registered with the username: **" + username + "** successfully");
-        event.replyEmbeds(embedBuilder.build()).queue();
+        embedBuilder.setTitle("Registered");
+        embedBuilder.setDescription("You have been registered with \nthe username: **" + username + "** successfully");
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
-    public static void sendUserNotRegisteredMessage(SlashCommandInteractionEvent event) {
+    public static void sendUserNotRegisteredMessage(SlashCommandInteractionEvent event, boolean toSelf) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.setTitle("User not registered");
-        embedBuilder.setDescription("You are not registered. Please register using the `/register` command");
-        event.replyEmbeds(embedBuilder.build()).queue();
+        embedBuilder.setTitle("Not Registered");
+        if (toSelf)
+            embedBuilder.setDescription("You are not registered. Please register using the `/register` command");
+        else
+            embedBuilder.setDescription("The user is not registered");
+        embedBuilder.setColor(0xFF0000);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
     public static void raiseSQLError(String message) {
@@ -69,7 +124,7 @@ public class Messages {
         embedBuilder.setDescription("A new LootSplit session has been created");
         embedBuilder.addField("Name", "```" + name + "```", true);
         embedBuilder.addField("SplitID", "```" + splitId + "```", true);
-        embedBuilder.setColor(0x00FF00);
+        embedBuilder.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
@@ -125,7 +180,7 @@ public class Messages {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Player Added");
         embedBuilder.setDescription("**" + playerName + "** has been added to the LootSplit session");
-        embedBuilder.setColor(0x00FF00);
+        embedBuilder.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
@@ -133,7 +188,7 @@ public class Messages {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Player Removed");
         embedBuilder.setDescription("**" + playerName + "** has been removed from the LootSplit session");
-        embedBuilder.setColor(0x00FF00);
+        embedBuilder.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 

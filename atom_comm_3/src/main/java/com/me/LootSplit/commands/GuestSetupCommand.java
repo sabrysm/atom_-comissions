@@ -40,8 +40,8 @@ public class GuestSetupCommand implements ISlashCommand {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Success");
         embedBuilder.setDescription(message);
-        embedBuilder.setColor(0x00FF00);
-        event.replyEmbeds(embedBuilder.build()).queue();
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
 }

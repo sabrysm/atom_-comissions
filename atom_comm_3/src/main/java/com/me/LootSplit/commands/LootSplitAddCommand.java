@@ -14,9 +14,11 @@ public class LootSplitAddCommand implements ISlashSubCommand {
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         final String playerName = event.getOption("username").getAsString();
         final String splitId;
+        final String uploadId;
         DatabaseManager databaseManager;
         try {
             splitId = LootSplitSession.getLootSplitIdFromGuild(event.getGuild().getIdLong());
+            uploadId = LootSplitSession.generateId("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
             databaseManager = new DatabaseManager();
             if (!databaseManager.isThereActiveSession(event.getGuild().getIdLong())) {
                 sendNoActiveLootSplitSessionMessage(event);
@@ -26,7 +28,7 @@ public class LootSplitAddCommand implements ISlashSubCommand {
                 sendMessage("Denied Operation", "Player: " + playerName + " is not in the Guild List!\nPlease add the player to the Guild List first.", 0xFF0000, event);
                 return;
             }
-            databaseManager.addPlayerToLootSplit(splitId, playerName, event.getUser().getIdLong());
+            databaseManager.addPlayerToLootSplit(splitId, uploadId, playerName, event.getGuild().getIdLong());
             sendPlayerAddedToLootSplit(event, playerName);
         } catch (SQLException e) {
             raiseSQLError("Error adding player:"+ playerName +" to LootSplit: " + e.getMessage());

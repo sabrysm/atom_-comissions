@@ -13,12 +13,7 @@ import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 
-import static com.me.LootSplit.utils.Messages.sendErrorProvideTextOptionMessage;
-import static com.me.LootSplit.utils.Messages.sendErrorOnlyOneOptionAllowedMessage;
-import static com.me.LootSplit.utils.Messages.sendErrorConnectingDatabaseMessage;
-import static com.me.LootSplit.utils.Messages.sendErrorUploadMessage;
-import static com.me.LootSplit.utils.Messages.sendErrorReadingMessage;
-import static com.me.LootSplit.utils.Messages.sendNotGuildListMessage;
+import static com.me.LootSplit.utils.Messages.*;
 
 public class LootSplitGuildUploadCommand implements ISlashSubCommand{
     private CompletableFuture<Void> cf;
@@ -30,6 +25,10 @@ public class LootSplitGuildUploadCommand implements ISlashSubCommand{
 
         try {
             lootSplitId = LootSplitSession.getLootSplitIdFromGuild(event.getGuild().getIdLong());
+            if (lootSplitId == null) {
+                sendNoActiveLootSplitSessionMessage(event);
+                return;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             sendErrorConnectingDatabaseMessage(event);

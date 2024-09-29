@@ -14,7 +14,6 @@ public class GuildRemoveCommand implements ISlashSubCommand {
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         try {
-            event.deferReply(false).queue();
             final String guildName = event.getOption("guild_name").getAsString();
             final DatabaseManager databaseManager = new DatabaseManager();
             databaseManager.removeGuildList(guildName, event.getGuild().getIdLong());
@@ -32,14 +31,14 @@ public class GuildRemoveCommand implements ISlashSubCommand {
         embedBuilder.setTitle(errorType + " Error");
         embedBuilder.setDescription("There was an error removing the guild list.");
         embedBuilder.setColor(0xFF0000);
-        event.replyEmbeds(embedBuilder.build()).queue();
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
     private void sendSuccessRemoveMessage(@NotNull SlashCommandInteractionEvent event) {
         final EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Success");
         embedBuilder.setDescription("The guild list has been removed.");
-        embedBuilder.setColor(0x00FF00);
-        event.replyEmbeds(embedBuilder.build()).queue();
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 }

@@ -6,12 +6,8 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-
-import static com.me.LootSplit.utils.Messages.sendNoLootSplitActiveMessage;
 
 public class GuildUploadHelper {
     /**
@@ -35,7 +31,7 @@ public class GuildUploadHelper {
     }
 
 
-    public void uploadGuildUploadUsers() throws SQLException {
+    public void uploadGuildUsers() throws SQLException {
         DatabaseManager manager = new DatabaseManager();
         // ReUpload the guild list if the guild name already exists
         if (manager.isGuildListExists(guildName, guildID)) {
@@ -46,6 +42,7 @@ public class GuildUploadHelper {
     }
 
     public void sendGuildUploadPaginator(SlashCommandInteractionEvent event) {
+        System.out.println("Sending GuildUpload paginator");
         List<MessageEmbed> guildEmbeds = getPaginatorEmbed();
         Paginator guildPaginator = new Paginator(guildEmbeds, event.getUser().getIdLong());
         event.getJDA().addEventListener(guildPaginator);
@@ -61,7 +58,7 @@ public class GuildUploadHelper {
             } else {
                 // "868PABLOW","08/14/2024 15:19:43","" "ADESUWU","08/14/2024 15:19:32","" I want " " to be the delimiter
                 lines = text.split("\" \"");
-              // System.out.println("Lines length: " + lines.length);
+               System.out.println("Lines length: " + lines.length);
             }
 
             int totalNumOfUsers = lines.length;
@@ -71,9 +68,9 @@ public class GuildUploadHelper {
             // Process each line
             // i=1 to skip the first line which contains the column names
             for (int i = 0; i < lines.length; i++) {
-                // Remove surrounding quotes and split by ","
+                // Remove surrounding quotes and split by " "
                 if (isFile) {
-                    result[i] = lines[i].replaceAll("^\"|\"$", "").split("\"\t\"");
+                    result[i] = lines[i].replaceAll("^\"|\"$", "").split("\" {4}\"");
                 } else {
                     // remove any quote
                     result[i] = lines[i].trim().replaceAll("^\"|\"$", "").trim().split(" {4}");
@@ -102,19 +99,17 @@ public class GuildUploadHelper {
         List<MessageEmbed> pages = new ArrayList<>();
         int usersPerPage = 10;
         int totalPages = (int) (Math.ceil((double) players.size() / usersPerPage));
-//        System.out.println("Number of users: " + players.size());
         int currentPage = 0;
-//        System.out.println("Number of users with last seen: " + usersWithLastSeen.size());
         int totalUsersNum = players.size();
         int counter = 0;
-        for (int i = 0; i < players.size(); i++) {
+        for (int i = 0; i < players.size(); i += usersPerPage) {
             EmbedBuilder newPage = new EmbedBuilder();
             newPage.setTitle("Guild List: "+ guildName + " - Page " + (currentPage + 1));
             StringBuilder pageContent = new StringBuilder();
             String header = " **Player Name**\n";
             for (int j = i; j < i + usersPerPage && j < totalUsersNum; j++) {
                 counter++;
-                String line = "- **" + players.get(j) + "\n";
+                String line = "- **" + players.get(j) + "**\n";
                 pageContent.append(line);
             }
             newPage.setDescription("Total number of users added: **" + totalUsersNum + "**\n\n" + header + pageContent.toString());
@@ -122,9 +117,8 @@ public class GuildUploadHelper {
             newPage.setColor(0x6064f4); // Blue
             pages.add(newPage.build());
             currentPage++;
-            i += usersPerPage - 1;
         }
-//        System.out.println("Total number of users: " + counter);
+        System.out.println("Total number of users: " + counter);
         return pages;
     }
 

@@ -23,9 +23,11 @@ public class LootSplitPartyUploadHelper {
     private static final int MIN_WIDTH_RESOLUTION = 300;
     private static final int MIN_HEIGHT_RESOLUTION = 400;
     private final String splitID;
+    private final String uploadId;
     private final long guildID;
     private List<String> validNames = new ArrayList<>();
-    private List<String> validUsersStatus = new ArrayList<>();
+    private List<String> names = new ArrayList<>();
+    private List<String> usersStatus = new ArrayList<>();
     private List<String> leftNames = new ArrayList<>();
     private List<String> rightNames = new ArrayList<>();
     private List<String> leftStatus = new ArrayList<>();
@@ -34,6 +36,7 @@ public class LootSplitPartyUploadHelper {
     public LootSplitPartyUploadHelper(String splitID, long guildID) {
         this.splitID = splitID;
         this.guildID = guildID;
+        this.uploadId = generateUploadId();
     }
 
     public static boolean isLowResolution(InputStream imageStream) throws IOException {
@@ -58,11 +61,22 @@ public class LootSplitPartyUploadHelper {
         }
     }
 
+    private String generateUploadId() {
+        String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder builder = new StringBuilder();
+        int count = 7;
+        while (count-- != 0) {
+            int character = (int)(Math.random()*ALPHA_NUMERIC_STRING.length());
+            builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+        }
+        return builder.toString();
+    }
+
 
     public void addPlayersToParty(SlashCommandInteractionEvent event) {
         try {
             DatabaseManager manager = new DatabaseManager();
-            manager.addPlayersToLootSplit(splitID, validNames, event.getGuild().getIdLong());
+            manager.addPlayersToLootSplit(uploadId, splitID, validNames, event.getGuild().getIdLong());
             System.out.println("Players added to the party successfully");
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -84,6 +98,7 @@ public class LootSplitPartyUploadHelper {
                 if (detectedSpelledName != null) {
                     System.out.printf("Detected Spell Name: %s\n", detectedSpelledName);
                     detectedNames.add(detectedSpelledName);
+                    validNames.add(detectedSpelledName);
                     detectedUsersStatus.add("Exists");
                 }
                 else {
@@ -92,11 +107,11 @@ public class LootSplitPartyUploadHelper {
                     detectedUsersStatus.add("Unknown");
                 }
             }
-            validNames = new ArrayList<>(detectedNames);
-            validUsersStatus = new ArrayList<>(detectedUsersStatus);
+            names = new ArrayList<>(detectedNames);
+            usersStatus = new ArrayList<>(detectedUsersStatus);
             fillLeftRightNames();
-            System.out.println("Length of valid names: " + validNames.size());
-            System.out.println("Length of valid status: " + validUsersStatus.size());
+            System.out.println("Length of party names: " + names.size());
+            System.out.println("Length of party users' status: " + usersStatus.size());
             return detectedNames;
 
         } catch (SQLException e) {
@@ -226,13 +241,13 @@ public class LootSplitPartyUploadHelper {
 
     public void fillLeftRightNames() {
         // for even number of names insert into left and for the others insert into right
-        for (int i = 0; i < validNames.size(); i++) {
+        for (int i = 0; i < names.size(); i++) {
             if (i % 2 == 0) {
-                leftNames.add(validNames.get(i));
-                leftStatus.add(validUsersStatus.get(i));
+                leftNames.add(names.get(i));
+                leftStatus.add(usersStatus.get(i));
             } else {
-                rightNames.add(validNames.get(i));
-                rightStatus.add(validUsersStatus.get(i));
+                rightNames.add(names.get(i));
+                rightStatus.add(usersStatus.get(i));
             }
         }
     }
@@ -259,25 +274,25 @@ public class LootSplitPartyUploadHelper {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("User Added to Party");
         embed.setDescription("The user **" + playerName + "** has been marked with status **" + status + "**.");
-        embed.setColor(0x00FF00); // Green
+        embed.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(embed.build()).queue();
     }
 
     public List<MessageEmbed> getPaginatorEmbed() {
         List<MessageEmbed> pages = new ArrayList<>();
         int namesPerPage = 10;
-        int totalPages = (int) (Math.ceil((double) validNames.size() / namesPerPage));
+        int totalPages = (int) (Math.ceil((double) names.size() / namesPerPage));
         int currentPage = 0;
-        for (int i = 0; i < validNames.size(); i++) {
+        for (int i = 0; i < names.size(); i++) {
             EmbedBuilder newPage = new EmbedBuilder();
             newPage.setTitle("Detected Names");
             StringBuilder pageContent = new StringBuilder();
             // Use StringUtils.center to center the text with 20 size for #, 20 for name and 20 for status
             String header = "```" + StringUtils.center("#", 3) + StringUtils.center("", 20) + StringUtils.center("Name", 16) + "\n\n";
             pageContent.append(header);
-            for (int j = i; j < i + namesPerPage && j < validNames.size(); j++) {
+            for (int j = i; j < i + namesPerPage && j < names.size(); j++) {
                 // Add fields to the embed and make it as a table
-                pageContent.append(StringUtils.center(String.valueOf(j + 1), 3)).append(StringUtils.center("", 20)).append(StringUtils.center(validNames.get(j), 16)).append("\n");
+                pageContent.append(StringUtils.center(String.valueOf(j + 1), 3)).append(StringUtils.center("", 20)).append(StringUtils.center(names.get(j), 16)).append("\n");
             }
             pageContent.append("```");
             newPage.setDescription(String.format("The following usernames have been detected \nfor the Party:\n*(You can re-upload the image to update the party)*\n\n" + pageContent.toString()));
@@ -311,7 +326,7 @@ public class LootSplitPartyUploadHelper {
             pageContent.append(StringUtils.center(leftNames.get(i), 16)).append(error).append(StringUtils.center(rightNames.get(i), 16)).append("\n");
         }
         pageContent.append("```");
-        newPage.setDescription(String.format("The following usernames have been detected \nfor the Party:\n*(You can re-upload the image to update the party)*\nPlease manually use `/cta party add <username>` to add players not detected\n\n" + pageContent.toString()));
+        newPage.setDescription(String.format("The following usernames have been detected \nfor the Party:\n*(You can re-upload the image to update the party)*\n\n" + pageContent.toString()));
         newPage.setFooter("Page 1 of 1");
         newPage.setColor(0x6064f4); // Blue
         pages.add(newPage.build());

@@ -16,20 +16,19 @@ import static com.me.LootSplit.utils.Messages.sendNoActiveLootSplitSessionMessag
 import static com.me.LootSplit.utils.Messages.sendNoValidNamesFoundMessage;
 
 public class LootSplitPartyUploadCommand implements ISlashSubCommand {
-
+    private String splitID;
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         Message.Attachment image = event.getOption("party_image").getAsAttachment();
         InputStream imageStream = image.getProxy().download().join();
         LootSplitPartyUploadHelper lootSplitPartyUploadHelper;
-        String splitID;
         try {
             splitID = LootSplitSession.getLootSplitIdFromGuild(event.getGuild().getIdLong());
-            lootSplitPartyUploadHelper = new LootSplitPartyUploadHelper(splitID, event.getGuild().getIdLong());
             if (splitID == null) {
                 sendNoActiveLootSplitSessionMessage(event);
                 return;
             }
+            lootSplitPartyUploadHelper = new LootSplitPartyUploadHelper(splitID, event.getGuild().getIdLong());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -69,14 +68,14 @@ public class LootSplitPartyUploadCommand implements ISlashSubCommand {
     // Error Processing the image
     public void sendErrorProcessingImage(SlashCommandInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Error Processing Image").setDescription("An error occurred while processing the image").setColor(0xFF0000);
+        embed.setTitle("Error Processing Image").setDescription("An error occurred while processing the image").setColor(0x6064f4);;
         event.getHook().sendMessageEmbeds(embed.build()).setEphemeral(true).queue();
     }
 
     // Error adding players to the party
     public void sendErrorAddingPlayersToParty(SlashCommandInteractionEvent event) {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Error Adding Players").setDescription("An error occurred while adding the players to the party").setColor(0xFF0000);
+        embed.setTitle("Error Adding Players").setDescription("An error occurred while adding the players to the party").setColor(0x6064f4);;
         event.getHook().sendMessageEmbeds(embed.build()).setEphemeral(true).queue();
     }
 }

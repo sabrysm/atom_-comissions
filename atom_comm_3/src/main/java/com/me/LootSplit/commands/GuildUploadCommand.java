@@ -1,7 +1,6 @@
 package com.me.LootSplit.commands;
 
 import com.me.LootSplit.utils.GuildUploadHelper;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -63,7 +62,7 @@ public class GuildUploadCommand implements ISlashSubCommand{
                         finalTextFile.delete();
 
                     } catch (IOException e) {
-                        sendErrorMessage("IOException", "An error occurred while reading the GuildUpload file", 0xFF0000, event);
+                        sendMessage("IOException", "An error occurred while reading the GuildUpload file", 0xFF0000, event);
                         return;
                     } catch (SQLException e) {
                         sendErrorUploadMessage(event);

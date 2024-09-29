@@ -56,6 +56,8 @@ public class DatabaseManager {
                     "name TEXT NOT NULL," +
                     "silver INTEGER NOT NULL," +
                     "items INTEGER NOT NULL," +
+                    "amount FLOAT NOT NULL," +
+                    "session_creator TEXT NOT NULL," +
                     "guild_id INTEGER NOT NULL" +
                     ")");
             statement.execute("CREATE TABLE IF NOT EXISTS lootsplit_players (" +
@@ -72,6 +74,95 @@ public class DatabaseManager {
         } finally {
             if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
         }
+    }
+
+    // getPlayerName(long userId)
+    public String getPlayerName(long userId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        String playerName = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT username FROM players WHERE user_id = ?");
+            statement.setLong(1, userId);
+            resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                playerName = resultSet.getString("username");
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return playerName;
+    }
+
+    // getFullSplitPlayers(String splitId)
+    public List<String> getFullSplitPlayers(String splitId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        List<String> fullPlayers = new ArrayList<>();
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT username FROM lootsplit_players WHERE split_id = ? AND is_halved = 0");
+            statement.setString(1, splitId);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                fullPlayers.add(resultSet.getString("username"));
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return fullPlayers;
+    }
+
+    // getHalfSplitPlayers(String splitId)
+    public List<String> getHalfSplitPlayers(String splitId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        List<String> halvedPlayers = new ArrayList<>();
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT username FROM lootsplit_players WHERE split_id = ? AND is_halved = 1");
+            statement.setString(1, splitId);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                halvedPlayers.add(resultSet.getString("username") + " (halved)");
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return halvedPlayers;
+    }
+
+    // isPlayerInLootSplit(String splitId, String playerName)
+    public boolean isPlayerInLootSplit(String splitId, String playerName) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        boolean exists = false;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT COUNT(*) FROM lootsplit_players WHERE split_id = ? AND username = ?");
+            statement.setString(1, splitId);
+            statement.setString(2, playerName);
+            resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                exists = resultSet.getInt(1) > 0;
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return exists;
     }
 
     // getPlayerBalance(long userId)
@@ -97,16 +188,17 @@ public class DatabaseManager {
     }
 
     // createNewLootSplitSession(String splitId, String name, long guildId)
-    public void createNewLootSplitSession(String splitId, String name, long guildId) throws SQLException {
+    public void createNewLootSplitSession(String splitId, String name, long guildId, String sessionCreator) throws SQLException {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            statement = connection.prepareStatement("INSERT INTO lootsplit_sessions (split_id, status, name, silver, items, guild_id) VALUES (?, ?, ?, 0, 0, ?)");
+            statement = connection.prepareStatement("INSERT INTO lootsplit_sessions (split_id, status, name, amount, silver, items, guild_id, session_creator) VALUES (?, ?, ?, 0, 0, 0, ?, ?)");
             statement.setString(1, splitId);
             statement.setString(2, "active");
             statement.setString(3, name);
             statement.setLong(4, guildId);
+            statement.setString(5, sessionCreator);
             statement.executeUpdate();
         } finally {
             if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
@@ -122,7 +214,7 @@ public class DatabaseManager {
         String splitId = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            statement = connection.prepareStatement("SELECT split_id FROM lootsplit_sessions WHERE guild_id = ?");
+            statement = connection.prepareStatement("SELECT split_id FROM lootsplit_sessions WHERE guild_id = ? AND status = 'active'");
             statement.setLong(1, guildId);
             resultSet = statement.executeQuery();
             if (resultSet.next()) {
@@ -137,13 +229,12 @@ public class DatabaseManager {
     }
 
 
-    // addPlayerToLootSplit(String splitId, String playerName, long guildId)
-    public void addPlayerToLootSplit(String splitId, String playerName, long guildId) throws SQLException {
+    // addPlayerToLootSplit(String splitId, String uploadId, String playerName, long guildId)
+    public void addPlayerToLootSplit(String splitId, String uploadId, String playerName, long guildId) throws SQLException {
         Connection connection = null;
         PreparedStatement statement = null;
         String query = "INSERT INTO lootsplit_players (split_id, upload_id, username, balance, is_halved, guild_id)\n" +
-                "SELECT ?, ?, ?, 0, 0, ?\n" +
-                "WHERE NOT EXISTS (" +
+                "SELECT ?, ?, ?, 0, 0, ? WHERE NOT EXISTS (" +
                 "SELECT 1 FROM lootsplit_players WHERE split_id = ? AND username = ?" +
                 ") AND EXISTS (" +
                 "SELECT 1 FROM players WHERE username = ? AND guild_id = ?" +
@@ -152,7 +243,7 @@ public class DatabaseManager {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
             statement = connection.prepareStatement(query);
             statement.setString(1, splitId);
-            statement.setString(2, splitId);
+            statement.setString(2, uploadId);
             statement.setString(3, playerName);
             statement.setLong(4, guildId);
             statement.setString(5, splitId);
@@ -326,12 +417,49 @@ public class DatabaseManager {
         return match;
     }
 
+    // getLootSplitSessionInfo(String splitId)
+    public OrderedMap<String, Object> getLootSplitSessionInfo(String splitId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        OrderedMap<String, Object> sessionInfo = new ListOrderedMap<>();
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT * FROM lootsplit_sessions WHERE split_id = ?");
+            statement.setString(1, splitId);
+            resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                sessionInfo.put("name", resultSet.getString("name"));
+                sessionInfo.put("split_id", resultSet.getString("split_id"));
+                sessionInfo.put("status", resultSet.getString("status"));
+                sessionInfo.put("silver", resultSet.getInt("silver"));
+                sessionInfo.put("items", resultSet.getInt("items"));
+                sessionInfo.put("amount", resultSet.getDouble("amount"));
+                sessionInfo.put("session_creator", resultSet.getString("session_creator"));
+                sessionInfo.put("guild_id", resultSet.getLong("guild_id"));
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return sessionInfo;
+    }
+
     // addBalanceToAllLootSplitPlayers(String splitId, Integer amount)
     public void addBalanceToAllLootSplitPlayers(String splitId, double amount) throws SQLException {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            try {
+                statement = connection.prepareStatement("UPDATE lootsplit_sessions SET amount = amount + ? WHERE split_id = ?");
+                statement.setDouble(1, amount);
+                statement.setString(2, splitId);
+                statement.executeUpdate();
+            } finally {
+                if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            }
             // halve the balance if the player is marked as halved
             try {
                 statement = connection.prepareStatement("UPDATE lootsplit_players SET balance = balance + ? WHERE split_id = ? AND is_halved = 0");
@@ -501,11 +629,14 @@ public class DatabaseManager {
         PreparedStatement statement = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            statement = connection.prepareStatement("INSERT INTO players (username, balance, registered, guild_name, guild_id) VALUES (?, 0, 0, ?, ?)");
-            for (String name : names) {
+            statement = connection.prepareStatement("INSERT INTO players (username, balance, registered, guild_name, guild_id) SELECT ?, 0, 0, ?, ? WHERE NOT EXISTS (SELECT 1 FROM players WHERE username = ? AND guild_id = ?)");
+            for (String name : names)
+            {
                 statement.setString(1, name);
                 statement.setString(2, guildName);
                 statement.setLong(3, guildId);
+                statement.setString(4, name);
+                statement.setLong(5, guildId);
                 statement.addBatch();
             }
             statement.executeBatch();
@@ -513,6 +644,28 @@ public class DatabaseManager {
             if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
             if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
         }
+    }
+    // getLootSplitPlayers(String splitId, long guildId)
+    public List<String> getLootSplitPlayers(String splitId, long guildId) throws SQLException {
+        Connection connection = null;
+        List<String> players = new ArrayList<>();
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT username FROM lootsplit_players WHERE split_id = ? AND guild_id = ?");
+            statement.setString(1, splitId);
+            statement.setLong(2, guildId);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                players.add(resultSet.getString("username"));
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return players;
     }
 
     // getLootSplitPlayersWithUploadId(String uploadId, String splitId, long guildId)
@@ -784,6 +937,37 @@ public class DatabaseManager {
             } catch (SQLException ignore) {
             }
         }
+    }
+
+    // getLootSplitSessionCreator(long guildId)
+    public String getLootSplitSessionCreator(long guildId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        String sessionCreator = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT session_creator FROM lootsplit_sessions WHERE guild_id = ? AND status = 'active'");
+            statement.setLong(1, guildId);
+            resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                sessionCreator = resultSet.getString("session_creator");
+            }
+        } finally {
+            if (resultSet != null) try {
+                resultSet.close();
+            } catch (SQLException ignore) {
+            }
+            if (statement != null) try {
+                statement.close();
+            } catch (SQLException ignore) {
+            }
+            if (connection != null) try {
+                connection.close();
+            } catch (SQLException ignore) {
+            }
+        }
+        return sessionCreator;
     }
 
     // getLootSplitPlayersCount(String splitId, long guildId)
