@@ -15,11 +15,11 @@ import java.util.Objects;
 
 import static com.me.LootSplit.utils.Messages.*;
 
-public class RegisterCommand implements ISlashCommand {
+public class UnregisterCommand implements ISlashCommand {
     @NotNull
     @Override
     public CommandData getCommandData() {
-        return Commands.slash("register", "Register your account with the in-game username")
+        return Commands.slash("unregister", "Unregister your account with the in-game username")
                 .setGuildOnly(true)
                 .addOption(OptionType.STRING, "username", "Your in-game username", true)
                 .addOption(OptionType.USER, "user", "The user to register", false);
@@ -46,28 +46,30 @@ public class RegisterCommand implements ISlashCommand {
             if (!databaseManager.isUserExists(username)) {
                 sendUserNotInGuildListMessage(event, username);
                 return;
-            } else if (databaseManager.isUserRegistered(userId)) {
-                sendUserAlreadyRegisteredMessage(event, event.getMember().getIdLong() == userId);
+            } else if (!databaseManager.isUserRegistered(userId)) {
+                sendUserNotRegisteredMessage(event, event.getMember().getIdLong() == userId);
                 return;
             } else {
-                // Register the user in the database
-                databaseManager.registerTheUser(username, userId);
-                // Change the user's nickname to the in-game username
-                event.getGuild().modifyNickname(event.getMember(), username).queue();
-                sendUserRegisteredSuccessfullyMessage(event, username, event.getMember().getIdLong() == userId);
+                // Unregister the user in the database
+                databaseManager.unregisterTheUser(username, userId);
+                // Remove nickname
+                event.getGuild().retrieveMemberById(userId).queue(member -> {
+                    event.getGuild().modifyNickname(member, null).queue();
+                });
+                sendUserUnregisteredSuccessfullyMessage(event, username, event.getMember().getIdLong() == userId);
             }
         } catch (SQLException e) {
-            raiseSQLError("Could not register user");
+            raiseSQLError("Could not unregister user");
         } catch (Exception e) {
-            event.getHook().sendMessage("Could not register user").queue();
-            raiseUnknownError("Could not register user");
+            event.getHook().sendMessage("Could not unregister user").queue();
+            raiseUnknownError("Could not unregister user");
         }
     }
 
     private void sendPermissionDeniedMessage(SlashCommandInteractionEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Permission Denied");
-        embedBuilder.setDescription("You cannot register another user.");
+        embedBuilder.setDescription("You cannot unregister another user.");
         embedBuilder.setColor(0xFF0000);
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }

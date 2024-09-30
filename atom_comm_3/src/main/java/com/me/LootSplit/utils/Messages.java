@@ -83,18 +83,35 @@ public class Messages {
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
-    public static void sendUserAlreadyRegisteredMessage(SlashCommandInteractionEvent event) {
+    public static void sendUserAlreadyRegisteredMessage(SlashCommandInteractionEvent event, boolean toSelf) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Already Registered");
-        embedBuilder.setDescription("You are already registered");
+        if (toSelf)
+            embedBuilder.setDescription("You are already registered");
+        else
+            embedBuilder.setDescription("The user is already registered");
         embedBuilder.setColor(0xFF0000);
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
-    public static void sendUserRegisteredSuccessfullyMessage(SlashCommandInteractionEvent event, String username) {
+    public static void sendUserRegisteredSuccessfullyMessage(SlashCommandInteractionEvent event, String username, boolean toSelf) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Registered");
-        embedBuilder.setDescription("You have been registered with \nthe username: **" + username + "** successfully");
+        if (toSelf)
+            embedBuilder.setDescription("You have been registered with \nthe username: **" + username + "** successfully");
+        else
+            embedBuilder.setDescription("The user has been registered with \nthe username: **" + username + "** successfully");
+        embedBuilder.setColor(0x6064f4);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
+    public static void sendUserUnregisteredSuccessfullyMessage(SlashCommandInteractionEvent event, String username, boolean toSelf) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Unregistered");
+        if (toSelf)
+            embedBuilder.setDescription("You have been unregistered with \nthe username: **" + username + "** successfully");
+        else
+            embedBuilder.setDescription("The user has been unregistered with \nthe username: **" + username + "** successfully");
         embedBuilder.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
