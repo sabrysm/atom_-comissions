@@ -34,11 +34,12 @@ public class Main {
         final GiveUserAmountCommand giveUserAmountCommand = new GiveUserAmountCommand();
         final RemoveUserAmountCommand removeUserAmountCommand = new RemoveUserAmountCommand();
         final RegisterCommand registerCommand = new RegisterCommand();
+        final UnregisterCommand unregisterCommand = new UnregisterCommand();
         final BalanceCommand balanceCommand = new BalanceCommand();
         final GuestSetupCommand guestSetupCommand = new GuestSetupCommand();
         final LeaderboardCommand leaderboardCommand = new LeaderboardCommand();
         final SlashCommandManager slashCommandManager = new SlashCommandManager();
-        slashCommandManager.addCommands(lootSplitCommands, giveUserAmountCommand, removeUserAmountCommand, balanceCommand, guildCommands, guestSetupCommand, registerCommand, leaderboardCommand);
+        slashCommandManager.addCommands(lootSplitCommands, giveUserAmountCommand, removeUserAmountCommand, balanceCommand, guildCommands, guestSetupCommand, registerCommand, unregisterCommand, leaderboardCommand);
         return slashCommandManager;
     }
 
