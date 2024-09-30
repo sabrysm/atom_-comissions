@@ -1,11 +1,14 @@
 package com.me.LootSplit.commands;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.jetbrains.annotations.NotNull;
+
+import static com.me.LootSplit.utils.Messages.sendRequiredRoleNotPresentMessage;
 
 public class GuildCommands implements ISlashCommand {
     @NotNull
@@ -28,6 +31,15 @@ public class GuildCommands implements ISlashCommand {
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
         event.deferReply(false).queue();
+        Dotenv config = Dotenv.configure().load();
+        String allowedRole = config.get("ALLOWED_ROLE_FOR_LOOTSPLIT");
+
+        // Only allow the command to be used by users with the specified role
+        if (!event.getMember().getRoles().stream().anyMatch(r -> r.getName().equals(allowedRole))) {
+            sendRequiredRoleNotPresentMessage(event);
+            return;
+        }
+
         switch (event.getFullCommandName()) {
             case "guild upload":
                 GuildUploadCommand guildUploadCommand = new GuildUploadCommand();

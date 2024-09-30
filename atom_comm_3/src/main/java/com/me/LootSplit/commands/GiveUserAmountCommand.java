@@ -1,6 +1,7 @@
 package com.me.LootSplit.commands;
 
 import com.me.LootSplit.database.DatabaseManager;
+import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -26,8 +27,16 @@ public class GiveUserAmountCommand implements ISlashCommand {
         event.deferReply(false).queue();
         final String playerName = event.getOption("username").getAsString();
         final double amount = event.getOption("amount").getAsDouble();
+        Dotenv config = Dotenv.configure().load();
+        String allowedRole = config.get("ALLOWED_ROLE_FOR_LOOTSPLIT");
+
         try {
             DatabaseManager databaseManager = new DatabaseManager();
+            // Only allow the command to be used by users with the specified role
+            if (!event.getMember().getRoles().stream().anyMatch(r -> r.getName().equals(allowedRole))) {
+                sendRequiredRoleNotPresentMessage(event);
+                return;
+            }
             databaseManager.giveUserAmount(playerName, amount);
             sendAmountAddedToPlayer(event, playerName, amount);
         } catch (SQLException e) {

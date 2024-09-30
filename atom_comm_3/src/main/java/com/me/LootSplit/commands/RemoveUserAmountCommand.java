@@ -1,6 +1,8 @@
 package com.me.LootSplit.commands;
 
 import com.me.LootSplit.database.DatabaseManager;
+import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -24,10 +26,19 @@ public class RemoveUserAmountCommand implements ISlashCommand {
 
     @Override
     public void execute(@NotNull SlashCommandInteractionEvent event) {
+        Dotenv config = Dotenv.configure().load();
+        String allowedRole = config.get("ALLOWED_ROLE_FOR_LOOTSPLIT");
+
         event.deferReply(false).queue();
+
         final String playerName = event.getOption("username").getAsString();
         final double amount = event.getOption("amount").getAsDouble();
         try {
+            // Only allow the command to be used by users with the specified role
+            if (!event.getMember().getRoles().stream().anyMatch(r -> r.getName().equals(allowedRole))) {
+                sendRequiredRoleNotPresentMessage(event);
+                return;
+            }
             DatabaseManager databaseManager = new DatabaseManager();
             databaseManager.removeUserAmount(playerName, amount);
             sendAmountRemovedFromPlayer(event, playerName, amount);
