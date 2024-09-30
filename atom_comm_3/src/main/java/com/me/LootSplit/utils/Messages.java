@@ -59,6 +59,14 @@ public class Messages {
         event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
     }
 
+    public static void sendRequiredRoleNotPresentMessage(SlashCommandInteractionEvent event) {
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setTitle("Permission Denied");
+        embedBuilder.setDescription("You do not have the required role to use this command.");
+        embedBuilder.setColor(0xFF0000);
+        event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+    }
+
     public static void sendPlayerNotInLootSplitMessage(SlashCommandInteractionEvent event, String playerName) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.setTitle("Not Found");
