@@ -895,8 +895,8 @@ public class DatabaseManager {
         ResultSet resultSet = null;
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            statement = connection.prepareStatement("SELECT COUNT(*) FROM players WHERE username = ?");
-            statement.setString(1, username);
+            statement = connection.prepareStatement("SELECT COUNT(*) FROM players WHERE LOWER(username) = ?");
+            statement.setString(1, username.toLowerCase());
             resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 isExists = resultSet.getInt(1) > 0;
