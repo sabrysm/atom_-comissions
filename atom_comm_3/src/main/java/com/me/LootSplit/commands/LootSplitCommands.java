@@ -1,5 +1,7 @@
 package com.me.LootSplit.commands;
 
+import io.github.cdimascio.dotenv.Dotenv;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -61,6 +63,19 @@ public class LootSplitCommands implements ISlashCommand {
     }
 
     public void execute(@NotNull SlashCommandInteractionEvent event) {
+        Dotenv config = Dotenv.configure().load();
+        String allowedRole = config.get("ALLOWED_ROLE_FOR_LOOTSPLIT");
+
+        // Only allow the command to be used by users with the specified role
+        if (!event.getMember().getRoles().stream().anyMatch(r -> r.getName().equals(allowedRole))) {
+            EmbedBuilder embedBuilder = new EmbedBuilder();
+            embedBuilder.setTitle("Permission Denied");
+            embedBuilder.setDescription("You do not have the required role to use this command.");
+            embedBuilder.setColor(0xFF0000);
+            event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+            return;
+        }
+
         switch (event.getFullCommandName()) {
             case "lootsplit create":
                 event.deferReply(false).queue();
