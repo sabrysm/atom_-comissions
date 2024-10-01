@@ -576,6 +576,47 @@ public class DatabaseManager {
         }
         return exists;
     }
+    // unregisterTheUser(String username, long userId)
+    public void unregisterTheUser(String username, long userId) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("UPDATE players SET user_id = NULL, registered = 0 WHERE username = ? AND user_id = ?");
+            statement.setString(1, username);
+            statement.setLong(2, userId);
+            statement.executeUpdate();
+        } finally {
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+    }
+
+    // getLootSplitSessions(long guildId)
+    public List<OrderedMap<String, String>> getLootSplitSessions(long guildId) throws SQLException {
+        Connection connection = null;
+        List<OrderedMap<String, String>> sessions = new ArrayList<>();
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("SELECT * FROM lootsplit_sessions WHERE guild_id = ?");
+            statement.setLong(1, guildId);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                OrderedMap<String, String> session = new ListOrderedMap<>();
+                session.put("name", resultSet.getString("name"));
+                session.put("split_id", resultSet.getString("split_id"));
+                session.put("status", resultSet.getString("status"));
+                sessions.add(session);
+            }
+        } finally {
+            if (resultSet != null) try { resultSet.close(); } catch (SQLException ignore) {}
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+        return sessions;
+    }
 
     // registerTheUser(String username, long userId)
     public void registerTheUser(String username, long userId) throws SQLException {

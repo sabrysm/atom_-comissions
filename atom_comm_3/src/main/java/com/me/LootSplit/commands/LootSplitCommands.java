@@ -59,6 +59,9 @@ public class LootSplitCommands implements ISlashCommand {
                 .addSubcommands(
                         new SubcommandData("confirm", "Confirms the LootSplit with the specified ID")
                                 .addOption(OptionType.STRING, "split_id", "The split ID", true)
+                )
+                .addSubcommands(
+                        new SubcommandData("list", "Lists all the LootSplit sessions for this guild")
                 );
     }
 
@@ -67,7 +70,7 @@ public class LootSplitCommands implements ISlashCommand {
         String allowedRole = config.get("ALLOWED_ROLE_FOR_LOOTSPLIT");
 
         // Only allow the command to be used by users with the specified role
-        if (!event.getMember().getRoles().stream().anyMatch(r -> r.getName().equals(allowedRole))) {
+        if (!event.getMember().getRoles().stream().anyMatch(r -> r.getName().equals(allowedRole)) && !event.getFullCommandName().equals("lootsplit list")) {
             EmbedBuilder embedBuilder = new EmbedBuilder();
             embedBuilder.setTitle("Permission Denied");
             embedBuilder.setDescription("You do not have the required role to use this command.");
@@ -116,6 +119,11 @@ public class LootSplitCommands implements ISlashCommand {
                 event.deferReply(false).queue();
                 LootSplitConfirmCommand confirmCommand = new LootSplitConfirmCommand();
                 confirmCommand.execute(event);
+                break;
+            case "lootsplit list":
+                event.deferReply(false).queue();
+                LootSplitListCommand listCommand = new LootSplitListCommand();
+                listCommand.execute(event);
                 break;
         }
     }
