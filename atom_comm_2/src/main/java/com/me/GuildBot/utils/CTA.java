@@ -69,14 +69,14 @@ public class CTA {
     // sendCTACancelledMessage(event, ctaID);
     public static void sendCTACancelledMessage(SlashCommandInteractionEvent event, String ctaID) {
         EmbedBuilder successEmbed = new EmbedBuilder();
-        successEmbed.setTitle("CTA Cancelled").setDescription(String.format("The CTA with ID:**%s** has been cancelled", ctaID)).setColor(0x00FF00);
+        successEmbed.setTitle("CTA Cancelled").setDescription(String.format("The CTA with ID:**%s** has been cancelled", ctaID)).setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(successEmbed.build()).queue();
     }
 
     // sendCTADeletedMessage(event, ctaID);
     public static void sendCTADeletedMessage(SlashCommandInteractionEvent event, String ctaID) {
         EmbedBuilder successEmbed = new EmbedBuilder();
-        successEmbed.setTitle("CTA Deleted").setDescription(String.format("The CTA with ID:**%s** has been deleted", ctaID)).setColor(0x00FF00);
+        successEmbed.setTitle("CTA Deleted").setDescription(String.format("The CTA with ID:**%s** has been deleted", ctaID)).setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(successEmbed.build()).queue();
     }
 
@@ -172,7 +172,7 @@ public class CTA {
         statsEmbed.addField("Attendances", String.valueOf(attendances), false);
         statsEmbed.addField("Lates", String.valueOf(lates), false);
         statsEmbed.addField("Absentees", String.valueOf(absentees), false);
-        statsEmbed.setColor(0x00FF00); // Green
+        statsEmbed.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(statsEmbed.build()).queue();
     }
 

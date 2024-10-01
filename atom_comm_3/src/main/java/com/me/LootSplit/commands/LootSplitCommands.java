@@ -61,6 +61,10 @@ public class LootSplitCommands implements ISlashCommand {
                                 .addOption(OptionType.STRING, "split_id", "The split ID", true)
                 )
                 .addSubcommands(
+                        new SubcommandData("info", "Shows the information for the current LootSplit session")
+                                .addOption(OptionType.STRING, "split_id", "The split ID", true)
+                )
+                .addSubcommands(
                         new SubcommandData("list", "Lists all the LootSplit sessions for this guild")
                 );
     }
@@ -75,7 +79,7 @@ public class LootSplitCommands implements ISlashCommand {
             embedBuilder.setTitle("Permission Denied");
             embedBuilder.setDescription("You do not have the required role to use this command.");
             embedBuilder.setColor(0xFF0000);
-            event.getHook().sendMessageEmbeds(embedBuilder.build()).queue();
+            event.replyEmbeds(embedBuilder.build()).queue();
             return;
         }
 
@@ -124,6 +128,11 @@ public class LootSplitCommands implements ISlashCommand {
                 event.deferReply(false).queue();
                 LootSplitListCommand listCommand = new LootSplitListCommand();
                 listCommand.execute(event);
+                break;
+            case "lootsplit info":
+                event.deferReply(false).queue();
+                LootSplitInfoCommand infoCommand = new LootSplitInfoCommand();
+                infoCommand.execute(event);
                 break;
         }
     }

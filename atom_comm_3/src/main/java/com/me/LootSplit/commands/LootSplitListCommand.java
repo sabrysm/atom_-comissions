@@ -64,7 +64,7 @@ public class LootSplitListCommand implements ISlashSubCommand {
                 OrderedMap<String, String> lootSplitSession = lootSplitSessions.get(j);
                 embedBuilder.addField(lootSplitSession.get("name"), "- **Status:** `" + toTitleCase(lootSplitSession.get("status"))+ "`\n- **Split ID:** `" + lootSplitSession.get("split_id") + "`", false);
             }
-            embedBuilder.setColor(0x00FF00);
+            embedBuilder.setColor(0x6064f4);
             messageEmbeds.add(embedBuilder.build());
         }
         return messageEmbeds;

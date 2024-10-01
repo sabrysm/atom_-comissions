@@ -339,7 +339,7 @@ public class PartyUploadHelper {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle("User Added to Party");
         embed.setDescription("The user **" + playerName + "** has been marked with status **" + status + "**.");
-        embed.setColor(0x00FF00); // Green
+        embed.setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(embed.build()).queue();
     }
 

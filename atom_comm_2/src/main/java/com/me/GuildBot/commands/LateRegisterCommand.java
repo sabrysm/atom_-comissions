@@ -21,7 +21,7 @@ public class LateRegisterCommand implements ISlashSubCommand {
             DatabaseManager manager = new DatabaseManager();
             manager.addPlayerToParty(username, event.getGuild().getIdLong(), ctaID, null, "late");
             EmbedBuilder successEmbed = new EmbedBuilder();
-            successEmbed.setTitle("User Added").setDescription("The user **" + username + "** has been added to the CTA as a **Late Attendee**").setColor(0x00FF00);
+            successEmbed.setTitle("User Added").setDescription("The user **" + username + "** has been added to the CTA as a **Late Attendee**").setColor(0x6064f4);
             event.getHook().sendMessageEmbeds(successEmbed.build()).queue();
         } catch (SQLException e) {
             System.out.printf("SQL Error occurred while adding user as a Late Register: %s\n", e.getMessage());

@@ -36,7 +36,7 @@ public class AddReportCommand implements ISlashSubCommand {
 
     public void sendReportAddedMessage(SlashCommandInteractionEvent event, String ctaID) {
         EmbedBuilder successEmbed = new EmbedBuilder();
-        successEmbed.setTitle("Report Added").setDescription("The report has been added for the CTA with the ID **" + ctaID + "**").setColor(0x00FF00);
+        successEmbed.setTitle("Report Added").setDescription("The report has been added for the CTA with the ID **" + ctaID + "**").setColor(0x6064f4);
         event.getHook().sendMessageEmbeds(successEmbed.build()).queue();
     }
 

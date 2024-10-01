@@ -40,7 +40,7 @@ public class Tasks {
                             EmbedBuilder embed = new EmbedBuilder();
                             embed.setTitle("CTA Finished");
                             embed.setDescription("CTA: " + ctaID + " has finished");
-                            embed.setColor(0x00FF00);
+                            embed.setColor(0x6064f4);
                             guild.getSystemChannel().sendMessageEmbeds(embed.build()).queue();
                         }
                     }
