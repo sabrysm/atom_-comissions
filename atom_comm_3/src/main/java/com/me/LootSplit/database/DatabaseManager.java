@@ -235,9 +235,9 @@ public class DatabaseManager {
         PreparedStatement statement = null;
         String query = "INSERT INTO lootsplit_players (split_id, upload_id, username, balance, is_halved, guild_id)\n" +
                 "SELECT ?, ?, ?, 0, 0, ? WHERE NOT EXISTS (" +
-                "SELECT 1 FROM lootsplit_players WHERE split_id = ? AND username = ?" +
+                "SELECT 1 FROM lootsplit_players WHERE split_id = ? AND LOWER(username) = LOWER(?)" +
                 ") AND EXISTS (" +
-                "SELECT 1 FROM players WHERE username = ? AND guild_id = ?" +
+                "SELECT 1 FROM players WHERE LOWER(username) = LOWER(?) AND guild_id = ?" +
                 ");";
         try {
             connection = DriverManager.getConnection("jdbc:sqlite:" + path);

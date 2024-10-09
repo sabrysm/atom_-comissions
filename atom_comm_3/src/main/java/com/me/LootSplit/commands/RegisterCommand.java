@@ -5,6 +5,8 @@ import io.github.cdimascio.dotenv.Dotenv;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.exceptions.HierarchyException;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -53,14 +55,23 @@ public class RegisterCommand implements ISlashCommand {
                 // Register the user in the database
                 databaseManager.registerTheUser(username, userId);
                 // Change the user's nickname to the in-game username
-                event.getGuild().modifyNickname(event.getMember(), username).queue();
+                event.getGuild().modifyNickname(event.getMember(), username).queue(
+                        success -> event.getHook().sendMessage("Successfully changed nickname to " + username).queue(),
+                        failure -> event.getHook().sendMessage("Failed to change nickname to " + username + " due to " + failure.getMessage()).queue()
+                );
                 sendUserRegisteredSuccessfullyMessage(event, username, event.getMember().getIdLong() == userId);
             }
-        } catch (SQLException e) {
-            raiseSQLError("Could not register user");
+        } catch (IllegalArgumentException e) {
+            System.err.println("Could not register user due to Error: " + e.getMessage());
+
+        } catch (InsufficientPermissionException e) {
+            System.err.println("Could not register user due to Insufficient permissions: " + e.getMessage());
+
+        } catch (HierarchyException e) {
+            System.err.println("Could not register user due to Hierarchy issue: " + e.getMessage());
+
         } catch (Exception e) {
-            event.getHook().sendMessage("Could not register user").queue();
-            raiseUnknownError("Could not register user");
+            raiseUnknownError("Could not register user " + e.getMessage());
         }
     }
 
