@@ -305,6 +305,38 @@ public class DatabaseManager {
         }
     }
 
+    // addGuildUser(event.getGuild().getIdLong(), userName);
+    public void addGuildUser(long guildId, String userName) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("INSERT INTO players (username, balance, guild_name, registered, guild_id) VALUES (?, 0, 'N/A', 0, ?)");
+            statement.setString(1, userName);
+            statement.setLong(2, guildId);
+            statement.executeUpdate();
+        } finally {
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+    }
+
+    // removeGuildUser(event.getGuild().getIdLong(), userName);
+    public void removeGuildUser(long guildId, String userName) throws SQLException {
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+            statement = connection.prepareStatement("DELETE FROM players WHERE guild_id = ? AND username = ?");
+            statement.setLong(1, guildId);
+            statement.setString(2, userName);
+            statement.executeUpdate();
+        } finally {
+            if (statement != null) try { statement.close(); } catch (SQLException ignore) {}
+            if (connection != null) try { connection.close(); } catch (SQLException ignore) {}
+        }
+    }
+
     // setLootSplitSilverAndItems(String splitID, Integer silver, Integer items)
     public void setLootSplitSilverAndItems(String splitID, Integer silver, Integer items) throws SQLException {
         Connection connection = null;

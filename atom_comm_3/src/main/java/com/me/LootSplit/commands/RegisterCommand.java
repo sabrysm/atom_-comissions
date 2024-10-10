@@ -71,7 +71,7 @@ public class RegisterCommand implements ISlashCommand {
             System.err.println("Could not register user due to Hierarchy issue: " + e.getMessage());
 
         } catch (Exception e) {
-            raiseUnknownError("Could not register user " + e.getMessage());
+            System.err.println("Could not register user due to Unknown Error: " + e.getMessage());
         }
     }
 
